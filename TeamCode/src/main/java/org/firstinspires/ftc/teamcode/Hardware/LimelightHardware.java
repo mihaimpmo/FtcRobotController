@@ -4,10 +4,11 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class LimelightHardware {
-    public Limelight3A limelight;
+    public final Limelight3A limelight;
 
-    public void init(HardwareMap hardwareMap) {
+    public LimelightHardware(HardwareMap hardwareMap) {
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        limelight.setPollRateHz(100);
         limelight.start();
     }
 }
