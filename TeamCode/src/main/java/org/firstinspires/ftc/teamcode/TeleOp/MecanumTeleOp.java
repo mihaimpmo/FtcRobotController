@@ -5,11 +5,13 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.Hardware.ChassisHardware;
+import org.firstinspires.ftc.teamcode.Hardware.LimelightHardware;
 import org.firstinspires.ftc.teamcode.Subsystems.Camera;
 
 @TeleOp
 public class MecanumTeleOp extends LinearOpMode {
     public ChassisHardware hardware;
+    public LimelightHardware limelightHardware;
     public Camera camera;
 
     @Override
@@ -17,6 +19,7 @@ public class MecanumTeleOp extends LinearOpMode {
 
 
         hardware = new ChassisHardware(hardwareMap);
+        camera = new Camera(limelightHardware);
         waitForStart();
 
         while (opModeIsActive()) {
