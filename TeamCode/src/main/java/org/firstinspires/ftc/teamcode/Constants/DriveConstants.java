@@ -9,11 +9,12 @@ public class DriveConstants {
     public static double WHEELBASE_METERS = 0.385;
     public static double TRACK_WIDTH_METERS = 0.385;
 
-    // Module positions (FL, FR, BL, BR) - +X forward, +Y left
-    public static final Translation2d FL_POSITION = new Translation2d(0.1925, 0.1925);
-    public static final Translation2d FR_POSITION = new Translation2d(0.1925, -0.1925);
-    public static final Translation2d BL_POSITION = new Translation2d(-0.1925, 0.1925);
-    public static final Translation2d BR_POSITION = new Translation2d(-0.1925, -0.1925);
+    // Module positions - +X forward, +Y left
+    // FL-FR at front, BL-BR at back (Y signs flipped for correct spin direction)
+    public static final Translation2d BL_POSITION = new Translation2d(-0.1925, 0.1925);   // front-left
+    public static final Translation2d BR_POSITION = new Translation2d(-0.1925, -0.1925);    // front-right
+    public static final Translation2d FR_POSITION = new Translation2d(-0.1925, -0.1925);  // back-left
+    public static final Translation2d FL_POSITION = new Translation2d(-0.1925, 0.1925);   // back-right
 
     // Wheel specs
     public static double WHEEL_DIAMETER_METERS = 0.0762;
@@ -33,5 +34,5 @@ public class DriveConstants {
     public static double DRIVE_P = 0.0;
     public static double DRIVE_I = 0.0;
     public static double DRIVE_D = 0.0;
-    public static double DRIVE_FF = 1.0 / MAX_SPEED_METERS_PER_SECOND;
+    public static double DRIVE_FF = 1.0;
 }

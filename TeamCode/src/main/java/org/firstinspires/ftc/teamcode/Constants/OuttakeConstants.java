@@ -12,7 +12,7 @@ public class OuttakeConstants {
     public static final double MOTOR_TICKS_PER_REV = 28.0;
 
     // Target velocity
-    public static final double TARGET_RPM = 2700.0;
+    public static final double TARGET_RPM = 3200;
 
     // PID gains
     public static final double VELOCITY_P = 0.0002;
@@ -24,4 +24,5 @@ public class OuttakeConstants {
     // Control
     public static final double RPM_TOLERANCE = 15.0;
     public static final double MIN_POWER = 0.05;
+
 }

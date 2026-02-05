@@ -26,8 +26,8 @@ public class SwerveDrive {
                 DriveConstants.BR_POSITION
         );
 
-        fl = createModule(hardwareMap, "fl", SteeringConstants.FL_VOLTAGE_OFFSET, false, true);
-        fr = createModule(hardwareMap, "fr", SteeringConstants.FR_VOLTAGE_OFFSET, false, true);
+        fl = createModule(hardwareMap, "fl", SteeringConstants.FL_VOLTAGE_OFFSET, true, true);
+        fr = createModule(hardwareMap, "fr", SteeringConstants.FR_VOLTAGE_OFFSET, true, true);
         bl = createModule(hardwareMap, "bl", SteeringConstants.BL_VOLTAGE_OFFSET, true, true);
         br = createModule(hardwareMap, "br", SteeringConstants.BR_VOLTAGE_OFFSET, true, true);
     }
@@ -53,7 +53,9 @@ public class SwerveDrive {
     }
 
     public void drive(double xSpeed, double ySpeed, double rotSpeed) {
-        drive(xSpeed, ySpeed, rotSpeed, true); // Default to optimizing
+        // Default to optimize=false - FTCLib optimize fails due to 2:1 encoder overlap
+        // (90° and 270° servo positions output same voltage)
+        drive(xSpeed, ySpeed, rotSpeed, false);
     }
 
     public void drive(double xSpeed, double ySpeed, double rotSpeed, boolean optimize) {

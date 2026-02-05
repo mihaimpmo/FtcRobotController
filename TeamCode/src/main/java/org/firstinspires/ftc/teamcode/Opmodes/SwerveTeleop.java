@@ -71,8 +71,13 @@ public class SwerveTeleop extends LinearOpMode {
             strafe *= ControlConstants.MAX_DRIVE_SPEED;
             rotation *= ControlConstants.MAX_ROTATION_SPEED;
 
-            boolean isRotating = Math.abs(rotation) > 0;
-            drive.drive(forward, strafe, rotation, !isRotating);
+            // OLD: Inconsistent optimize flag caused unpredictable flipping
+            // boolean isRotating = Math.abs(rotation) > 0;
+            // drive.drive(forward, strafe, rotation, !isRotating);
+
+            // NEW: Use 3-arg drive() which defaults to optimize=false
+            // Our manual ±90° clamping in SwerveModule handles optimization
+            drive.drive(forward, strafe, rotation);
 
             telemetry.addData("Fwd/Str/Rot", "%.1f / %.1f / %.1f", forward, strafe, rotation);
             drive.addTelemetry(telemetry);
