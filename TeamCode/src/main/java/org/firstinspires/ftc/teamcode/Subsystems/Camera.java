@@ -5,6 +5,7 @@ import com.qualcomm.hardware.limelightvision.LLResultTypes;
 
 import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.robotcore.external.navigation.Position;
+import org.firstinspires.ftc.teamcode.Constants.Constants;
 import org.firstinspires.ftc.teamcode.Hardware.LimelightHardware;
 
 import java.util.List;
@@ -12,9 +13,12 @@ import java.util.Locale;
 
 public class Camera {
     private final LimelightHardware limelightHardware;
+    private Constants constants;
+
 
     public Camera(LimelightHardware limelightHardware) {
         this.limelightHardware = limelightHardware;
+        constants = new Constants();
     }
     private int targetTagId = -1;
     private double lastDistanceMeters = 0;
@@ -43,6 +47,7 @@ public class Camera {
         lastTx = result.getTx();
         lastTy = result.getTy();
 
+
         List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
         if (fiducials.isEmpty()) {
             hasValidTarget = false;
@@ -65,17 +70,6 @@ public class Camera {
 
         lastTrackedTagId = targetFiducial.getFiducialId();
 
-        // Get robot pose relative to the tag
-        Pose3D robotPoseTargetSpace = targetFiducial.getRobotPoseTargetSpace();
-        if (robotPoseTargetSpace != null) {
-            Position pos = robotPoseTargetSpace.getPosition();
-            // X and Z form the horizontal plane, Y is vertical
-            lastDistanceMeters = Math.sqrt(pos.x * pos.x + pos.z * pos.z);
-            lastHeightMeters = pos.y;
-            hasValidTarget = true;
-        } else {
-            hasValidTarget = false;
-        }
     }
     public boolean hasTarget() {
         return hasValidTarget;
@@ -95,6 +89,7 @@ public class Camera {
     public double getTy() {
         return lastTy;
     }
+    public double getTID() {return targetTagId;}
     public void setPipeline(int pipeline) {
         if (limelightHardware.limelight != null) {
             limelightHardware.limelight.pipelineSwitch(pipeline);
@@ -103,14 +98,7 @@ public class Camera {
     public boolean isConnected() {
         return limelightHardware.limelight != null;
     }
-    public String getStatusString() {
-        if (limelightHardware.limelight == null) {
-            return "Limelight: Not connected";
-        }
-        if (!hasValidTarget) {
-            return "Limelight: No target";
-        }
-        return String.format(Locale.US, "Tag %d | Dist: %.2fm | Height: %.2fm | tx: %.1f°",
-                lastTrackedTagId, lastDistanceMeters, lastHeightMeters, lastTx);
+    public double hdistance(double ty) {
+        return (constants.h2-constants.h1)/Math.tan(constants.deg2rad(constants.a+ty));
     }
 }
