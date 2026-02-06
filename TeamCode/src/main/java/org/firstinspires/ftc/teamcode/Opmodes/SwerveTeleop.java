@@ -45,7 +45,7 @@ public class SwerveTeleop extends LinearOpMode {
             } else {
                 outtake.stop();
             }
-            outtake.rampShoot(gamepad2.triangle);
+            outtake.rampShoot(gamepad2.dpad_up);
             outtake.update();
 
             if (gamepad2.square) {
@@ -54,7 +54,7 @@ public class SwerveTeleop extends LinearOpMode {
                 intake.Stop();
             }
 
-            if (gamepad1.dpad_up) {
+            if (gamepad2.dpad_up) {
                 drive.resetModulesToZero();
             }
 

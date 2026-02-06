@@ -107,7 +107,7 @@ public class Outtake {
                 }
                 break;
             case SHOOTING:
-                if (ramp.isReady()) {
+                if (ramp.isReady() && isAtTargetSpeed()) {
                     shootTimer.reset();
                     rampState = RampState.HOLDING;
                 }

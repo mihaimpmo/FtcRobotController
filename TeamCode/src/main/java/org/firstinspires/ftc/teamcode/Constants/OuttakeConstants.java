@@ -1,5 +1,9 @@
 package org.firstinspires.ftc.teamcode.Constants;
 
+import com.acmerobotics.dashboard.config.Config;
+
+@Config
+
 public class OuttakeConstants {
     // Ramp servo positions
     public static final double RAMP_MAX = 355;

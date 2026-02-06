@@ -53,8 +53,9 @@ public class SwerveDrive {
     }
 
     public void drive(double xSpeed, double ySpeed, double rotSpeed) {
-        // Default to optimize=false - FTCLib optimize fails due to 2:1 encoder overlap
-        // (90° and 270° servo positions output same voltage)
+        // DON'T use FTCLib optimize() - it can choose angles outside verifiable range
+        // With 2:1 ratio, encoder can only verify [-90°, +90°] wheel angles
+        // SwerveModule's manual clamping handles optimization within this range
         drive(xSpeed, ySpeed, rotSpeed, false);
     }
 
@@ -69,6 +70,10 @@ public class SwerveDrive {
         fr.setDesiredState(moduleStates[1], optimize);
         bl.setDesiredState(moduleStates[2], optimize);
         br.setDesiredState(moduleStates[3], optimize);
+    }
+
+    private SwerveModuleState scaleSpeed(SwerveModuleState state, double scale) {
+        return new SwerveModuleState(state.speedMetersPerSecond * scale, state.angle);
     }
 
     public void hold() {

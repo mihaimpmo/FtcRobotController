@@ -56,9 +56,7 @@ public class SwerveTeleopAngle extends LinearOpMode {
                 intake.Stop();
             }
 
-            if (gamepad1.dpad_up) {
-                drive.resetModulesToZero();
-            }
+
 
             double leftStickX = gamepad1.left_stick_x;
             double leftStickY = -gamepad1.left_stick_y;

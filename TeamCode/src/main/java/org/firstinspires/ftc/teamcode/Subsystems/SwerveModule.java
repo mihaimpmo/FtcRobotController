@@ -26,11 +26,6 @@ public class SwerveModule {
     private long lastTime = System.nanoTime();
     private final boolean steerInvertedStored; // Store for hold() to use
 
-    // Continuous angle tracking (fixes 0°/360° wrapping)
-    private double prevRawAngleDeg = 0.0;
-    private double unwrappedAngleDeg = 0.0;
-    private boolean firstAngleUpdate = true;
-
     public SwerveModule(
             DcMotorEx driveMotor,
             CRServo steerServo,
@@ -51,17 +46,8 @@ public class SwerveModule {
         driveMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         driveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        // Initialize angle tracking immediately to prevent random spin on first setDesiredState()
-        // This reads the current encoder position and uses it as the starting point
-        double initialAngle = encoder.getRawAngleDegrees180();
-        prevRawAngleDeg = initialAngle;
-        unwrappedAngleDeg = initialAngle;
-        firstAngleUpdate = false;  // Mark as already initialized
-
-        // Initialize lastNonZeroAngle to current position (clamped to ±90° wheel angle)
-        double wheelAngleDeg = initialAngle / 2.0;  // 2:1 gear ratio
-        double clampedDeg = Math.max(-90.0, Math.min(90.0, MathUtils.wrap180(wheelAngleDeg)));
-        lastNonZeroAngle = new Rotation2d(Math.toRadians(clampedDeg));
+        // Initialize lastNonZeroAngle to current wheel position (encoder handles tracking)
+        lastNonZeroAngle = new Rotation2d(encoder.getUnwrappedWheelAngleRad());
 
         // Initialize desiredState to current position so it doesn't try to go to 0° on first call
         desiredState = new SwerveModuleState(0, lastNonZeroAngle);
@@ -70,33 +56,13 @@ public class SwerveModule {
         steerServo.setPower(0);
     }
 
+    /**
+     * Returns the CONTINUOUS (unwrapped) wheel angle in radians.
+     * This can be any value: -500°, 0°, 720°, etc.
+     * Tracked continuously by AxonEncoder to avoid the 2:1 ambiguity problem.
+     */
     public double getSteeringAngle() {
-        double rawServoDeg = encoder.getRawAngleDegrees180();
-
-        if (firstAngleUpdate) {
-            prevRawAngleDeg = rawServoDeg;
-            unwrappedAngleDeg = rawServoDeg;
-            firstAngleUpdate = false;
-        }
-
-        // Unwrap delta to avoid jumps at boundary
-        double delta = rawServoDeg - prevRawAngleDeg;
-        if (delta > 180.0) delta -= 360.0;
-        if (delta < -180.0) delta += 360.0;
-
-        unwrappedAngleDeg += delta;
-        prevRawAngleDeg = rawServoDeg;
-
-        // 2:1 gear ratio: wheel = servo / 2
-        double wheelAngleDeg = unwrappedAngleDeg / 2.0;
-        double wrappedDeg = MathUtils.wrap180(wheelAngleDeg);
-
-        // Clamp measured angle to [-90°, +90°] - same range as target
-        // With 2:1 ratio, this is the valid operating range
-        if (wrappedDeg > 90.0) wrappedDeg = 90.0;
-        if (wrappedDeg < -90.0) wrappedDeg = -90.0;
-
-        return Math.toRadians(wrappedDeg);
+        return encoder.getUnwrappedWheelAngleRad();
     }
 
     public void setDesiredState(SwerveModuleState desiredState) {
@@ -124,24 +90,72 @@ public class SwerveModule {
             lastNonZeroAngle = stateToSet.angle;
         }
 
-        double targetRad = MathUtils.normalizeAngleRadians(stateToSet.angle.getRadians());
+        double rawTargetRad = MathUtils.normalizeAngleRadians(stateToSet.angle.getRadians());
         double speed = stateToSet.speedMetersPerSecond;
+        double currentAngle = getSteeringAngle();  // UNWRAPPED (continuous)
 
+        // Force target into canonical range (-90°, +90°] to keep all modules in sync
+        final double RIGHT_ANGLE = Math.PI / 2;  // 90°
+        final double NEAR_90_TOLERANCE = Math.toRadians(5.0);  // Within 5° of ±90°
 
+        double targetRad = rawTargetRad;
+        boolean motorFlipped = false;
 
-        if (targetRad > Math.PI / 2) {
-            targetRad -= Math.PI;
-            speed = -speed;
-        } else if (targetRad < -Math.PI / 2) {
-            targetRad += Math.PI;
+        // Check if target is near ±90° (special case for strafe)
+        boolean nearPositive90 = Math.abs(rawTargetRad - RIGHT_ANGLE) < NEAR_90_TOLERANCE;
+        boolean nearNegative90 = Math.abs(rawTargetRad + RIGHT_ANGLE) < NEAR_90_TOLERANCE;
+
+        if (nearPositive90 || nearNegative90) {
+            // Special handling for strafe: pick nearest ±90° equivalent to current position
+            // This prevents 180° rotation when switching strafe directions
+            double pos90 = RIGHT_ANGLE;
+            double neg90 = -RIGHT_ANGLE;
+
+            // Find nearest 360° equivalent of each
+            while (pos90 - currentAngle > Math.PI) pos90 -= 2 * Math.PI;
+            while (pos90 - currentAngle < -Math.PI) pos90 += 2 * Math.PI;
+            while (neg90 - currentAngle > Math.PI) neg90 -= 2 * Math.PI;
+            while (neg90 - currentAngle < -Math.PI) neg90 += 2 * Math.PI;
+
+            // Pick the closer one
+            if (Math.abs(pos90 - currentAngle) <= Math.abs(neg90 - currentAngle)) {
+                targetRad = pos90;
+                // If original target was -90° but we're using +90°, flip motor
+                if (nearNegative90) {
+                    motorFlipped = true;
+                }
+            } else {
+                targetRad = neg90;
+                // If original target was +90° but we're using -90°, flip motor
+                if (nearPositive90) {
+                    motorFlipped = true;
+                }
+            }
+        } else {
+            // Normal case: clamp to (-90°, +90°]
+            if (targetRad > RIGHT_ANGLE) {
+                targetRad -= Math.PI;
+                motorFlipped = true;
+            } else if (targetRad <= -RIGHT_ANGLE) {
+                targetRad += Math.PI;
+                motorFlipped = true;
+            }
+
+            // Find nearest 360° equivalent
+            while (targetRad - currentAngle > Math.PI) targetRad -= 2 * Math.PI;
+            while (targetRad - currentAngle < -Math.PI) targetRad += 2 * Math.PI;
+        }
+
+        if (motorFlipped) {
             speed = -speed;
         }
 
+        double nearestTarget = targetRad;
+
         this.desiredState = stateToSet;
 
-        double currentAngle = getSteeringAngle();
-
-        double error = MathUtils.shortestAngularDistance(currentAngle, targetRad);
+        // Error to nearest equivalent target (will be ≤180°)
+        double error = nearestTarget - currentAngle;
 
         // Cosine compensation: reduce drive power when wheel isn't aligned
         // Prevents wheel from "fighting" - driving hard while still turning
@@ -192,10 +206,11 @@ public class SwerveModule {
     }
 
     public void addTelemetry(Telemetry telemetry) {
-        double current = getSteeringAngle();
+        double currentUnwrapped = getSteeringAngle();
+        double currentWrapped = MathUtils.normalizeAngleDegrees(Math.toDegrees(currentUnwrapped));
         double target = desiredState.angle.getRadians();
-        double err = Math.toDegrees(MathUtils.shortestAngularDistance(current, target));
-        telemetry.addData(moduleName, "%.1f° → %.1f° (err: %.1f°)",
-                Math.toDegrees(current), Math.toDegrees(target), err);
+        double targetWrapped = MathUtils.normalizeAngleDegrees(Math.toDegrees(target));
+        telemetry.addData(moduleName, "%.0f° (%.0f°) → %.0f°",
+                currentWrapped, Math.toDegrees(currentUnwrapped), targetWrapped);
     }
 }
