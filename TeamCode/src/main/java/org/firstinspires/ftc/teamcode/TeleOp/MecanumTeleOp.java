@@ -6,9 +6,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import org.firstinspires.ftc.teamcode.Hardware.ChassisHardware;
 import org.firstinspires.ftc.teamcode.Hardware.LimelightHardware;
 import org.firstinspires.ftc.teamcode.Subsystems.Camera;
-
-
-
 @TeleOp(name = "Limelight debug")
 public class MecanumTeleOp extends LinearOpMode {
     public ChassisHardware hardware;

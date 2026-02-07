@@ -2,18 +2,13 @@ package org.firstinspires.ftc.teamcode.Subsystems;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
-
-import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
-import org.firstinspires.ftc.robotcore.external.navigation.Position;
 import org.firstinspires.ftc.teamcode.Constants.Constants;
 import org.firstinspires.ftc.teamcode.Hardware.LimelightHardware;
-
 import java.util.List;
-import java.util.Locale;
 
 public class Camera {
     private final LimelightHardware limelightHardware;
-    private Constants constants;
+    private final Constants constants;
 
 
     public Camera(LimelightHardware limelightHardware) {
@@ -21,11 +16,8 @@ public class Camera {
         constants = new Constants();
     }
     private int targetTagId = -1;
-    private double lastDistanceMeters = 0;
-    private double lastHeightMeters = 0;
     private double lastTx = 0;
     private double lastTy = 0;
-    private int lastTrackedTagId = -1;
     private boolean hasValidTarget = false;
 
     public void setTargetTagId(int tagId) {
@@ -68,28 +60,21 @@ public class Camera {
             return;
         }
 
-        lastTrackedTagId = targetFiducial.getFiducialId();
+        targetTagId = targetFiducial.getFiducialId();
 
     }
     public boolean hasTarget() {
         return hasValidTarget;
     }
-    public int getTrackedTagId() {
-        return hasValidTarget ? lastTrackedTagId : -1;
-    }
-    public double getDistanceToGoalMeters() {
-        return lastDistanceMeters;
-    }
-    public double getHeightToGoalMeters() {
-        return lastHeightMeters;
-    }
     public double getTx() {
         return lastTx;
-    }
+    } //get horizontal offset in degress
     public double getTy() {
         return lastTy;
-    }
-    public double getTID() {return targetTagId;}
+    } //get vertical offset in degress
+    public double getTID() {return targetTagId;} //get target id
+
+    // Set the camera pipeline
     public void setPipeline(int pipeline) {
         if (limelightHardware.limelight != null) {
             limelightHardware.limelight.pipelineSwitch(pipeline);
@@ -98,6 +83,8 @@ public class Camera {
     public boolean isConnected() {
         return limelightHardware.limelight != null;
     }
+
+    // Get horizontal distance to target
     public double hdistance(double ty) {
         return (constants.h2-constants.h1)/Math.tan(constants.deg2rad(constants.a+ty));
     }
