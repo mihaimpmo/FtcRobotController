@@ -2,8 +2,11 @@ package org.firstinspires.ftc.teamcode.Subsystems;
 
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.hardware.limelightvision.LLResultTypes;
-import org.firstinspires.ftc.teamcode.Constants.Constants;
+
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
+import org.firstinspires.ftc.teamcode.Utils.Constants;
 import org.firstinspires.ftc.teamcode.Hardware.LimelightHardware;
+
 import java.util.List;
 
 public class Camera {
@@ -18,7 +21,11 @@ public class Camera {
     private int targetTagId = -1;
     private double lastTx = 0;
     private double lastTy = 0;
+    private double posx = 0;
+    private double posy = 0;
+    private double tagId = 0;
     private boolean hasValidTarget = false;
+
 
     public void setTargetTagId(int tagId) {
         this.targetTagId = tagId;
@@ -34,10 +41,18 @@ public class Camera {
             hasValidTarget = false;
             return;
         }
-
+        if (result != null && result.isValid()) {
+            Pose3D botpose = result.getBotpose();
+            if (botpose != null) {
+                posx = botpose.getPosition().x;
+                posy = botpose.getPosition().y;
+                //telemetry.addData("MT1 Location", "(" + x + ", " + y + ")");
+            }
+        }
         // Cache raw angle offsets
         lastTx = result.getTx();
         lastTy = result.getTy();
+
 
 
         List<LLResultTypes.FiducialResult> fiducials = result.getFiducialResults();
@@ -60,7 +75,7 @@ public class Camera {
             return;
         }
 
-        targetTagId = targetFiducial.getFiducialId();
+        tagId = targetFiducial.getFiducialId();
 
     }
     public boolean hasTarget() {
@@ -72,7 +87,10 @@ public class Camera {
     public double getTy() {
         return lastTy;
     } //get vertical offset in degress
-    public double getTID() {return targetTagId;} //get target id
+    public double getTid() {return tagId;} //get target id
+    public double getX() {return posx;} //get x
+    public double getY() {return posy;} //get y
+    public void setTargetTagid(int id) {this.targetTagId=id;} //set tharget tag;
 
     // Set the camera pipeline
     public void setPipeline(int pipeline) {

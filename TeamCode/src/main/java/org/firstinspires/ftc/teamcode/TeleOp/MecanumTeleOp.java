@@ -27,7 +27,7 @@ public class MecanumTeleOp extends LinearOpMode {
             telemetry.update();
             telemetry.addData("tx: ", camera.getTx());
             telemetry.addData("ty: ", camera.getTy());
-            telemetry.addData("tid: ", camera.getTID());
+            telemetry.addData("tid: ", camera.getTid());
             telemetry.addData("distance: ", camera.hdistance(camera.getTy()));
 
 
