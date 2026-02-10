@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.Subsystems;
 
-import com.arcrobotics.ftclib.geometry.Rotation2d;
-import com.arcrobotics.ftclib.kinematics.wpilibkinematics.SwerveModuleState;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -17,14 +15,13 @@ public class SwerveModule {
     private final CRServo steerServo;
     private final AxonEncoder encoder;
     private final boolean driveInverted;
-    private final boolean steerInverted;
+     private final boolean steerInverted;
     private final String moduleName;
 
-    private SwerveModuleState desiredState = new SwerveModuleState();
-    private Rotation2d lastNonZeroAngle;
+    private double targetAngle;
+    private double heldAngle;
     private double lastError = 0.0;
     private long lastTime = System.nanoTime();
-    private final boolean steerInvertedStored;
 
     public SwerveModule(
             DcMotorEx driveMotor,
@@ -39,48 +36,31 @@ public class SwerveModule {
         this.encoder = encoder;
         this.driveInverted = driveInverted;
         this.steerInverted = steerInverted;
-        this.steerInvertedStored = steerInverted;
         this.moduleName = moduleName;
 
         driveMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         driveMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         driveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        lastNonZeroAngle = new Rotation2d(encoder.getUnwrappedWheelAngleRad());
-
-        desiredState = new SwerveModuleState(0, lastNonZeroAngle);
+        heldAngle = encoder.getWheelAngle();
+        targetAngle = heldAngle;
 
         steerServo.setPower(0);
     }
 
-    public double getSteeringAngle() {
-        return encoder.getUnwrappedWheelAngleRad();
+    public double getAngle() {
+        return encoder.getWheelAngle();
     }
 
-    public void setDesiredState(SwerveModuleState desiredState) {
-        setDesiredState(desiredState, false);
-    }
-
-    public void setDesiredState(SwerveModuleState desiredState, boolean optimize) {
-        boolean isStationaryDefault =
-                Math.abs(desiredState.speedMetersPerSecond) < 0.001 &&
-                        Math.abs(desiredState.angle.getRadians()) < 0.001;
-
-        SwerveModuleState stateToUse = isStationaryDefault
-                ? new SwerveModuleState(0, lastNonZeroAngle)
-                : desiredState;
-
-        SwerveModuleState stateToSet = optimize
-                ? SwerveModuleState.optimize(stateToUse, new Rotation2d(getSteeringAngle()))
-                : stateToUse;
-
-        if (!isStationaryDefault && Math.abs(desiredState.speedMetersPerSecond) > 0.001) {
-            lastNonZeroAngle = stateToSet.angle;
+    public void set(double angle, double speed) {
+        if (Math.abs(speed) < 0.001) {
+            angle = heldAngle;
+        } else {
+            heldAngle = angle;
         }
 
-        double rawTargetRad = MathUtils.normalizeAngleRadians(stateToSet.angle.getRadians());
-        double speed = stateToSet.speedMetersPerSecond;
-        double currentAngle = getSteeringAngle();
+        double rawTargetRad = MathUtils.wrapRad(angle);
+        double currentAngle = getAngle();
 
         final double RIGHT_ANGLE = Math.PI / 2;
         final double NEAR_90_TOLERANCE = Math.toRadians(5.0);
@@ -102,14 +82,10 @@ public class SwerveModule {
 
             if (Math.abs(pos90 - currentAngle) <= Math.abs(neg90 - currentAngle)) {
                 targetRad = pos90;
-                if (nearNegative90) {
-                    motorFlipped = true;
-                }
+                if (nearNegative90) motorFlipped = true;
             } else {
                 targetRad = neg90;
-                if (nearPositive90) {
-                    motorFlipped = true;
-                }
+                if (nearPositive90) motorFlipped = true;
             }
         } else {
             if (targetRad > RIGHT_ANGLE) {
@@ -124,13 +100,11 @@ public class SwerveModule {
             while (targetRad - currentAngle < -Math.PI) targetRad += 2 * Math.PI;
         }
 
-        if (motorFlipped) {
-            speed = -speed;
-        }
+        if (motorFlipped) speed = -speed;
 
         double nearestTarget = targetRad;
 
-        this.desiredState = stateToSet;
+        this.targetAngle = angle;
 
         double error = nearestTarget - currentAngle;
 
@@ -159,33 +133,19 @@ public class SwerveModule {
         driveMotor.setPower(drivePower);
     }
 
-    public SwerveModuleState getState() {
-        return new SwerveModuleState(0.0, new Rotation2d(getSteeringAngle()));
-    }
-
-    public double getSteeringErrorTo(SwerveModuleState targetState) {
-        double targetRad = MathUtils.normalizeAngleRadians(targetState.angle.getRadians());
-        if (targetRad > Math.PI / 2) {
-            targetRad -= Math.PI;
-        } else if (targetRad < -Math.PI / 2) {
-            targetRad += Math.PI;
-        }
-        return Math.abs(MathUtils.shortestAngularDistance(getSteeringAngle(), targetRad));
-    }
-
     public void hold() {
         driveMotor.setPower(0.0);
-        double holdPower = steerInvertedStored ? -SteeringConstants.MIN_SERVO_POWER
+        double holdPower = steerInverted ? -SteeringConstants.MIN_SERVO_POWER
                 : SteeringConstants.MIN_SERVO_POWER;
         steerServo.setPower(holdPower);
     }
 
-    public void addTelemetry(Telemetry telemetry) {
-        double currentUnwrapped = getSteeringAngle();
-        double currentWrapped = MathUtils.normalizeAngleDegrees(Math.toDegrees(currentUnwrapped));
-        double target = desiredState.angle.getRadians();
-        double targetWrapped = MathUtils.normalizeAngleDegrees(Math.toDegrees(target));
-        telemetry.addData(moduleName, "%.0f° (%.0f°) → %.0f°",
+    public void log(Telemetry telemetry) {
+        double currentUnwrapped = getAngle();
+        double currentWrapped = MathUtils.wrapDeg(Math.toDegrees(currentUnwrapped));
+        double target = targetAngle;
+        double targetWrapped = MathUtils.wrapDeg(Math.toDegrees(target));
+        telemetry.addData(moduleName, "%.0f\u00b0 (%.0f\u00b0) \u2192 %.0f\u00b0",
                 currentWrapped, Math.toDegrees(currentUnwrapped), targetWrapped);
     }
 }

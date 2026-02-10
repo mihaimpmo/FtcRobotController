@@ -53,26 +53,21 @@ public class SwerveTeleop extends LinearOpMode {
             }
 
             if (gamepad2.dpad_up) {
-                drive.resetModulesToZero();
+                drive.zero();
             }
 
             double forward = -gamepad1.left_stick_y;
             double strafe = -gamepad1.left_stick_x;
             double rotation = -gamepad1.right_stick_x;
 
-            if (Math.abs(forward) < ControlConstants.JOYSTICK_DEADBAND) forward = 0;
-            if (Math.abs(strafe) < ControlConstants.JOYSTICK_DEADBAND) strafe = 0;
-            if (Math.abs(rotation) < ControlConstants.JOYSTICK_DEADBAND) rotation = 0;
-
-            forward *= ControlConstants.MAX_DRIVE_SPEED;
-            strafe *= ControlConstants.MAX_DRIVE_SPEED;
-            rotation *= ControlConstants.MAX_ROTATION_SPEED;
-
+            if (Math.abs(forward) < ControlConstants.DEADBAND) forward = 0;
+            if (Math.abs(strafe) < ControlConstants.DEADBAND) strafe = 0;
+            if (Math.abs(rotation) < ControlConstants.DEADBAND) rotation = 0;
 
             drive.drive(forward, strafe, rotation);
 
             telemetry.addData("Fwd/Str/Rot", "%.1f / %.1f / %.1f", forward, strafe, rotation);
-            drive.addTelemetry(telemetry);
+            drive.log(telemetry);
             telemetry.update();
         }
     }

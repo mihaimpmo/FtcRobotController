@@ -66,12 +66,12 @@ public class AngleCalcTest extends LinearOpMode {
             double brV = brEnc.getVoltage();
 
             // Get angles from AxonEncoder
-            double flRaw180 = flEncoder.getRawAngleDegrees180();
-            double frRaw180 = frEncoder.getRawAngleDegrees180();
-            double blRaw180 = blEncoder.getRawAngleDegrees180();
-            double brRaw180 = brEncoder.getRawAngleDegrees180();
+            double flRaw180 = flEncoder.getRaw180();
+            double frRaw180 = frEncoder.getRaw180();
+            double blRaw180 = blEncoder.getRaw180();
+            double brRaw180 = brEncoder.getRaw180();
 
-            // Calculate wheel angles (mimics SwerveModule.getSteeringAngle())
+            // Calculate wheel angles (mimics SwerveModule.getAngle())
             double flWheel = calcWheelAngle(0, flRaw180);
             double frWheel = calcWheelAngle(1, frRaw180);
             double blWheel = calcWheelAngle(2, blRaw180);
@@ -133,7 +133,7 @@ public class AngleCalcTest extends LinearOpMode {
     }
 
     /**
-     * Mimics SwerveModule.getSteeringAngle() logic
+     * Mimics SwerveModule.getAngle() logic
      */
     private double calcWheelAngle(int index, double rawServoDeg) {
         if (firstUpdate[index]) {

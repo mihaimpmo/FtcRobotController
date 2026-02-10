@@ -61,9 +61,9 @@ public class SwerveTeleopAngle extends LinearOpMode {
             double leftStickY = -gamepad1.left_stick_y;
             double rotationInput = -gamepad1.right_stick_x;
 
-            if (Math.abs(leftStickX) < ControlConstants.JOYSTICK_DEADBAND) leftStickX = 0;
-            if (Math.abs(leftStickY) < ControlConstants.JOYSTICK_DEADBAND) leftStickY = 0;
-            if (Math.abs(rotationInput) < ControlConstants.JOYSTICK_DEADBAND) rotationInput = 0;
+            if (Math.abs(leftStickX) < ControlConstants.DEADBAND) leftStickX = 0;
+            if (Math.abs(leftStickY) < ControlConstants.DEADBAND) leftStickY = 0;
+            if (Math.abs(rotationInput) < ControlConstants.DEADBAND) rotationInput = 0;
 
             double magnitude = Math.sqrt(leftStickX * leftStickX + leftStickY * leftStickY);
             double joystickAngleRadians = Math.atan2(leftStickY, leftStickX);
@@ -73,19 +73,19 @@ public class SwerveTeleopAngle extends LinearOpMode {
             double robotAngleDegrees = joystickAngleDegrees - 90.0;
             if (robotAngleDegrees < 0) robotAngleDegrees += 360;
 
-            if (magnitude > ControlConstants.JOYSTICK_DEADBAND) {
+            if (magnitude > ControlConstants.DEADBAND) {
                 lastAngleDegrees = robotAngleDegrees;
             }
 
-            double forward = leftStickY * ControlConstants.MAX_DRIVE_SPEED;
-            double strafe = -leftStickX * ControlConstants.MAX_DRIVE_SPEED;
-            double rotation = rotationInput * ControlConstants.MAX_ROTATION_SPEED;
+            double forward = leftStickY;
+            double strafe = -leftStickX;
+            double rotation = rotationInput;
 
-            drive.drive(forward, strafe, rotation, true);
+            drive.drive(forward, strafe, rotation);
 
             telemetry.addData("Angle", "%.0f\u00b0", lastAngleDegrees);
             telemetry.addData("Fwd/Str/Rot", "%.1f / %.1f / %.1f", forward, strafe, rotation);
-            drive.addTelemetry(telemetry);
+            drive.log(telemetry);
             telemetry.update();
         }
     }

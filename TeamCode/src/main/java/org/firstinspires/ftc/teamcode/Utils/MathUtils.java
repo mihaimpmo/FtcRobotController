@@ -3,25 +3,25 @@ package org.firstinspires.ftc.teamcode.Utils;
 public class MathUtils {
     private static final double TWO_PI = 2.0 * Math.PI;
 
-    public static double normalizeAngleDegrees(double angle) {
+    public static double wrapDeg(double angle) {
         angle = angle % 360.0;
         if (angle < 0) angle += 360.0;
         if (angle > 180.0) angle -= 360.0;
         return angle;
     }
 
-    public static double normalizeAngleRadians(double angle) {
+    public static double wrapRad(double angle) {
         angle = angle % TWO_PI;
         if (angle < 0) angle += TWO_PI;
         if (angle > Math.PI) angle -= TWO_PI;
         return angle;
     }
 
-    public static double shortestAngularDistance(double from, double to) {
-        return normalizeAngleRadians(to - from);
+    public static double angleDiff(double from, double to) {
+        return wrapRad(to - from);
     }
 
-    public static double shortestAngularDistance90(double fromRad, double toRad) {
+    public static double angleDiff90(double fromRad, double toRad) {
         double diff = toRad - fromRad;
         diff = diff % Math.PI;
         if (diff > Math.PI / 2) diff -= Math.PI;
@@ -29,7 +29,7 @@ public class MathUtils {
         return diff;
     }
 
-    public static double normalizeAngle0To2Pi(double angle) {
+    public static double wrap2Pi(double angle) {
         angle = angle % TWO_PI;
         if (angle < 0) angle += TWO_PI;
         return angle;

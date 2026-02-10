@@ -21,10 +21,6 @@ dependencies {
         exclude group: 'org.firstinspires.ftc'
     }
     
-    // PedroPathing
-    implementation 'com.pedropathing:pedro:1.0.8'
 
-    // FTCLib for swerve kinematics
-    implementation 'org.ftclib.ftclib:core:2.1.1'
 }
 

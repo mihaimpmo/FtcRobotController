@@ -44,7 +44,7 @@ public class AxonEncoder {
         return angleDegrees;
     }
 
-    public double getAngleDegrees() {
+    public double getDeg() {
         double currentVoltage = encoder.getVoltage();
         double rawWheelAngle = voltageToWheelAngle(currentVoltage);
         double calibratedAngle = rawWheelAngle - angleOffsetDegrees;
@@ -56,20 +56,20 @@ public class AxonEncoder {
         return normalizedAngle;
     }
 
-    public double getAngleRadians() {
-        return Math.toRadians(getAngleDegrees());
+    public double getRad() {
+        return Math.toRadians(getDeg());
     }
 
     public double getRawVoltage() {
         return encoder.getVoltage();
     }
 
-    public double getRawServoAngle() {
+    public double getRawServo() {
         double voltage = Math.max(0.0, Math.min(encoder.getVoltage(), SteeringConstants.MAX_VOLTAGE));
         return (voltage / SteeringConstants.MAX_VOLTAGE) * 720.0;
     }
 
-    public double getRawAngleDegrees180() {
+    public double getRaw180() {
         double voltage = encoder.getVoltage();
         double rawAngle = ((voltage / 3.3) * 360.0) - 180.0;
         double offsetAngle = ((voltageOffset / 3.3) * 360.0) - 180.0;
@@ -77,7 +77,7 @@ public class AxonEncoder {
         return MathUtils.wrap180(calibrated);
     }
 
-    public double getUnwrappedWheelAngleRad() {
+    public double getWheelAngle() {
         double voltage = encoder.getVoltage();
         double rawServoDeg = (voltage / SteeringConstants.MAX_VOLTAGE) * 360.0 - angleOffsetDegrees;
         rawServoDeg = MathUtils.wrap180(rawServoDeg);
@@ -95,11 +95,11 @@ public class AxonEncoder {
         unwrappedServoDeg += delta;
         prevRawServoDeg = rawServoDeg;
 
-        double wheelAngleDeg = unwrappedServoDeg / 2.0;
+        double wheelAngleDeg = unwrappedServoDeg / SteeringConstants.SERVO_TO_WHEEL_RATIO;
         return Math.toRadians(wheelAngleDeg);
     }
 
-    public double getUnwrappedWheelAngleDeg() {
-        return Math.toDegrees(getUnwrappedWheelAngleRad());
+    public double getWheelAngleDeg() {
+        return Math.toDegrees(getWheelAngle());
     }
 }

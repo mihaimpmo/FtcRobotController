@@ -1,7 +1,5 @@
 package org.firstinspires.ftc.teamcode.Opmodes;
 
-import com.arcrobotics.ftclib.geometry.Rotation2d;
-import com.arcrobotics.ftclib.kinematics.wpilibkinematics.SwerveModuleState;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.AnalogInput;
@@ -50,11 +48,10 @@ public class SwerveModuleTest extends LinearOpMode {
 
         double targetDegrees = 0;
 
-        SwerveModuleState initialState = new SwerveModuleState(0.0, new Rotation2d(0));
-        fl.setDesiredState(initialState);
-        fr.setDesiredState(initialState);
-        bl.setDesiredState(initialState);
-        br.setDesiredState(initialState);
+        fl.set(0, 0);
+        fr.set(0, 0);
+        bl.set(0, 0);
+        br.set(0, 0);
 
         while (opModeIsActive()) {
             if (gamepad1.dpad_right) { targetDegrees += 5; sleep(100); }
@@ -66,19 +63,19 @@ public class SwerveModuleTest extends LinearOpMode {
             while (targetDegrees >= 360) targetDegrees -= 360;
             while (targetDegrees < 0) targetDegrees += 360;
 
-            SwerveModuleState state = new SwerveModuleState(0.0, new Rotation2d(Math.toRadians(targetDegrees)));
-            fl.setDesiredState(state);
-            fr.setDesiredState(state);
-            bl.setDesiredState(state);
-            br.setDesiredState(state);
+            double targetRad = Math.toRadians(targetDegrees);
+            fl.set(targetRad, 0);
+            fr.set(targetRad, 0);
+            bl.set(targetRad, 0);
+            br.set(targetRad, 0);
 
-            telemetry.addLine("Target: " + String.format("%.0f°", targetDegrees));
-            telemetry.addLine("DPad L/R: ±5° | Bumpers: ±45° | A: Reset");
+            telemetry.addLine("Target: " + String.format("%.0f\u00b0", targetDegrees));
+            telemetry.addLine("DPad L/R: \u00b15\u00b0 | Bumpers: \u00b145\u00b0 | A: Reset");
             telemetry.addLine();
-            fl.addTelemetry(telemetry);
-            fr.addTelemetry(telemetry);
-            bl.addTelemetry(telemetry);
-            br.addTelemetry(telemetry);
+            fl.log(telemetry);
+            fr.log(telemetry);
+            bl.log(telemetry);
+            br.log(telemetry);
             telemetry.update();
         }
     }
