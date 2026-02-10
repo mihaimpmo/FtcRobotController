@@ -1,15 +1,13 @@
 package org.firstinspires.ftc.teamcode.Subsystems;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.Constants.OuttakeConstants;
 import org.firstinspires.ftc.teamcode.Hardware.Hardware;
 import org.firstinspires.ftc.teamcode.Hardware.ServoCfg;
 
 public class Outtake {
+
     private Hardware hardware;
     private DcMotorEx motor1;
     private DcMotorEx motor2;
@@ -17,11 +15,9 @@ public class Outtake {
     private PIDController pidController2;
     private ServoCfg ramp;
 
-    private enum RampState { IDLE, SHOOTING, HOLDING }
+    private enum RampState { IDLE, SHOOT }
     private RampState rampState = RampState.IDLE;
     private boolean lastShootButton = false;
-    private ElapsedTime shootTimer = new ElapsedTime();
-    private static final double SHOOT_HOLD_TIME = 0.5;
 
     private double targetRPM = 0.0;
     private double currentRPM1 = 0.0;
@@ -37,24 +33,24 @@ public class Outtake {
 
         ramp = new ServoCfg(hardware.outtakeHardware.RampServo, 2);
         ramp.setRange(OuttakeConstants.RAMP_MIN, OuttakeConstants.RAMP_MAX);
-        ramp.moveTo(OuttakeConstants.RAMP_IDLE);  // Initialize to IDLE position
+        ramp.moveTo(OuttakeConstants.RAMP_IDLE);
 
-        this.pidController1 = new PIDController(
-            OuttakeConstants.VELOCITY_P,
-            OuttakeConstants.VELOCITY_I,
-            OuttakeConstants.VELOCITY_D
+        pidController1 = new PIDController(
+                OuttakeConstants.VELOCITY_P,
+                OuttakeConstants.VELOCITY_I,
+                OuttakeConstants.VELOCITY_D
         );
 
-        this.pidController2 = new PIDController(
-            OuttakeConstants.VELOCITY_P,
-            OuttakeConstants.VELOCITY_I,
-            OuttakeConstants.VELOCITY_D
+        pidController2 = new PIDController(
+                OuttakeConstants.VELOCITY_P,
+                OuttakeConstants.VELOCITY_I,
+                OuttakeConstants.VELOCITY_D
         );
     }
 
     public void setTargetRPM(double rpm) {
-        this.targetRPM = Math.max(0, Math.min(rpm, OuttakeConstants.MAX_MOTOR_RPM));
-        this.isActive = (this.targetRPM > 0);
+        targetRPM = Math.max(0, Math.min(rpm, OuttakeConstants.MAX_MOTOR_RPM));
+        isActive = targetRPM > 0;
     }
 
     public void update() {
@@ -65,13 +61,13 @@ public class Outtake {
             motorPower2 = 0;
             currentRPM1 = 0;
             currentRPM2 = 0;
+            ramp.execute();
             return;
         }
 
         double targetTPS = (targetRPM / 60.0) * OuttakeConstants.MOTOR_TICKS_PER_REV;
         double feedforward = targetTPS * OuttakeConstants.VELOCITY_FF;
 
-        // Motor 1
         double velocityTPS1 = motor1.getVelocity();
         currentRPM1 = (velocityTPS1 / OuttakeConstants.MOTOR_TICKS_PER_REV) * 60.0;
         motorPower1 = pidController1.calculate(targetRPM, currentRPM1) + feedforward;
@@ -81,7 +77,6 @@ public class Outtake {
         }
         motor1.setPower(motorPower1);
 
-        // Motor 2
         double velocityTPS2 = motor2.getVelocity();
         currentRPM2 = (velocityTPS2 / OuttakeConstants.MOTOR_TICKS_PER_REV) * 60.0;
         motorPower2 = pidController2.calculate(targetRPM, currentRPM2) + feedforward;
@@ -94,30 +89,18 @@ public class Outtake {
         ramp.execute();
     }
 
-    /** Auto-shoot: button press → SHOOT → hold → return to IDLE */
     public void rampShoot(boolean shootButton) {
-        boolean buttonPressed = shootButton && !lastShootButton;
+        boolean pressed = shootButton && !lastShootButton;
         lastShootButton = shootButton;
 
-        switch (rampState) {
-            case IDLE:
-                if (buttonPressed) {
-                    ramp.moveTo(OuttakeConstants.RAMP_SHOOT);
-                    rampState = RampState.SHOOTING;
-                }
-                break;
-            case SHOOTING:
-                if (ramp.isReady() && isAtTargetSpeed()) {
-                    shootTimer.reset();
-                    rampState = RampState.HOLDING;
-                }
-                break;
-            case HOLDING:
-                if (shootTimer.seconds() >= SHOOT_HOLD_TIME) {
-                    ramp.moveTo(OuttakeConstants.RAMP_IDLE);
-                    rampState = RampState.IDLE;
-                }
-                break;
+        if (!pressed) return;
+
+        if (rampState == RampState.IDLE) {
+            ramp.moveTo(OuttakeConstants.RAMP_SHOOT);
+            rampState = RampState.SHOOT;
+        } else {
+            ramp.moveTo(OuttakeConstants.RAMP_IDLE);
+            rampState = RampState.IDLE;
         }
     }
 
@@ -172,8 +155,13 @@ public class Outtake {
         return isActive;
     }
 
-    public String getRampState() { return rampState.toString(); }
-    public boolean isRampReady() { return rampState == RampState.IDLE; }
+    public String getRampState() {
+        return rampState.toString();
+    }
+
+    public boolean isRampReady() {
+        return rampState == RampState.IDLE;
+    }
 
     public void resetRamp() {
         rampState = RampState.IDLE;

@@ -33,17 +33,15 @@ public class SwerveTeleop extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            // Outtake: Cross to spin, bumpers change speed
+
             if (gamepad2.cross) {
-                if (gamepad2.left_bumper) {
-                    outtake.setTargetRPM(1500);
-                } else if (gamepad2.right_bumper) {
-                    outtake.setTargetRPM(4000);
-                } else {
-                    outtake.setTargetRPM(OuttakeConstants.TARGET_RPM);
-                }
-            } else {
-                outtake.stop();
+                if(gamepad2.left_bumper) outtake.setTargetRPM(OuttakeConstants.TARGET_RPM + 250);
+                else outtake.setTargetRPM(OuttakeConstants.TARGET_RPM);
+
+            }
+            else {
+
+                outtake.setTargetRPM(0);
             }
             outtake.rampShoot(gamepad2.dpad_up);
             outtake.update();
@@ -58,7 +56,6 @@ public class SwerveTeleop extends LinearOpMode {
                 drive.resetModulesToZero();
             }
 
-            // Joystick inputs (inverted to match WPILib: +X forward, +Y left, +rot CCW)
             double forward = -gamepad1.left_stick_y;
             double strafe = -gamepad1.left_stick_x;
             double rotation = -gamepad1.right_stick_x;
@@ -71,12 +68,7 @@ public class SwerveTeleop extends LinearOpMode {
             strafe *= ControlConstants.MAX_DRIVE_SPEED;
             rotation *= ControlConstants.MAX_ROTATION_SPEED;
 
-            // OLD: Inconsistent optimize flag caused unpredictable flipping
-            // boolean isRotating = Math.abs(rotation) > 0;
-            // drive.drive(forward, strafe, rotation, !isRotating);
 
-            // NEW: Use 3-arg drive() which defaults to optimize=false
-            // Our manual ±90° clamping in SwerveModule handles optimization
             drive.drive(forward, strafe, rotation);
 
             telemetry.addData("Fwd/Str/Rot", "%.1f / %.1f / %.1f", forward, strafe, rotation);

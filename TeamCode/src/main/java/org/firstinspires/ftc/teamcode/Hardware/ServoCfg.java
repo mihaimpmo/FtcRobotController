@@ -62,7 +62,6 @@ public class ServoCfg {
         tm.reset();
     }
 
-    /** Call every loop - tracks servo completion based on speed */
     public void execute() {
         if (state == ServoState.servoMove) {
             double dt = tm.milliseconds() / 1000;

@@ -33,29 +33,26 @@ public class SwerveDrive {
     }
 
     private SwerveModule createModule(
-        HardwareMap hardwareMap,
-        String name,
-        double voltageOffset,
-        boolean driveInverted,
-        boolean steerInverted
+            HardwareMap hardwareMap,
+            String name,
+            double voltageOffset,
+            boolean driveInverted,
+            boolean steerInverted
     ) {
         return new SwerveModule(
-            hardwareMap.get(DcMotorEx.class, name),
-            hardwareMap.get(CRServo.class, name + "_servo"),
-            new AxonEncoder(
-                hardwareMap.get(AnalogInput.class, name + "_enc"),
-                voltageOffset
-            ),
-            driveInverted,
-            steerInverted,
-            name.toUpperCase()
+                hardwareMap.get(DcMotorEx.class, name),
+                hardwareMap.get(CRServo.class, name + "_servo"),
+                new AxonEncoder(
+                        hardwareMap.get(AnalogInput.class, name + "_enc"),
+                        voltageOffset
+                ),
+                driveInverted,
+                steerInverted,
+                name.toUpperCase()
         );
     }
 
     public void drive(double xSpeed, double ySpeed, double rotSpeed) {
-        // DON'T use FTCLib optimize() - it can choose angles outside verifiable range
-        // With 2:1 ratio, encoder can only verify [-90°, +90°] wheel angles
-        // SwerveModule's manual clamping handles optimization within this range
         drive(xSpeed, ySpeed, rotSpeed, false);
     }
 

@@ -9,7 +9,6 @@ public class MotorDirectionTest extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        // Initialize the drive motors
         DcMotor fl_motor = hardwareMap.get(DcMotor.class, "fl");
         DcMotor fr_motor = hardwareMap.get(DcMotor.class, "fr");
         DcMotor bl_motor = hardwareMap.get(DcMotor.class, "bl");
@@ -27,7 +26,6 @@ public class MotorDirectionTest extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            // Reset all motor powers
             fl_motor.setPower(0);
             fr_motor.setPower(0);
             bl_motor.setPower(0);
@@ -35,7 +33,6 @@ public class MotorDirectionTest extends LinearOpMode {
 
             String activeMotor = "None";
 
-            // Check D-Pad and apply power to the selected motor
             if (gamepad1.dpad_up) {
                 fl_motor.setPower(0.3);
                 activeMotor = "Front-Left (fl)";
@@ -50,7 +47,6 @@ public class MotorDirectionTest extends LinearOpMode {
                 activeMotor = "Back-Right (br)";
             }
 
-            // Update telemetry
             telemetry.addData("Active Motor", activeMotor);
             telemetry.addData("Instructions", "Observe the spin direction of the active wheel.");
             telemetry.update();

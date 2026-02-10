@@ -9,16 +9,11 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Constants.DriveConstants;
 
-/**
- * Test to verify kinematics calculations
- * Checks if 45° offset is due to kinematics or encoder issues
- */
 @TeleOp(name = "Test: Angle Calculation", group = "Test")
 public class AngleCalculationTest extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        // Initialize kinematics with same config as SwerveDrive
         SwerveDriveKinematics kinematics = new SwerveDriveKinematics(
                 DriveConstants.FL_POSITION,
                 DriveConstants.FR_POSITION,
@@ -44,7 +39,6 @@ public class AngleCalculationTest extends LinearOpMode {
                 DriveConstants.BR_POSITION.getX(), DriveConstants.BR_POSITION.getY());
             telemetry.addLine();
 
-            // Test 1: Pure strafe RIGHT
             ChassisSpeeds strafeRight = new ChassisSpeeds(0, -3.0, 0);
             SwerveModuleState[] statesRight = kinematics.toSwerveModuleStates(strafeRight);
 
@@ -60,7 +54,6 @@ public class AngleCalculationTest extends LinearOpMode {
             }
             telemetry.addLine();
 
-            // Test 2: Pure strafe LEFT
             ChassisSpeeds strafeLeft = new ChassisSpeeds(0, 3.0, 0);
             SwerveModuleState[] statesLeft = kinematics.toSwerveModuleStates(strafeLeft);
 
@@ -76,7 +69,6 @@ public class AngleCalculationTest extends LinearOpMode {
             }
             telemetry.addLine();
 
-            // Test 3: Forward + Right (45° diagonal)
             ChassisSpeeds diagonal = new ChassisSpeeds(3.0, -3.0, 0);
             SwerveModuleState[] statesDiag = kinematics.toSwerveModuleStates(diagonal);
 

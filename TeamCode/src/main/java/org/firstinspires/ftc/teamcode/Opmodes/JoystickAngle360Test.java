@@ -14,17 +14,13 @@ public class JoystickAngle360Test extends LinearOpMode {
 
         while (opModeIsActive()) {
             double leftStickX = gamepad1.left_stick_x;
-            double leftStickY = -gamepad1.left_stick_y; // Y stick is inverted
+            double leftStickY = -gamepad1.left_stick_y;
 
-            // Only update angle if joystick is outside of deadband
             if (Math.sqrt(leftStickX * leftStickX + leftStickY * leftStickY) > 0.1) {
-                // Calculate angle in radians from -PI to PI
                 double angleRadians = Math.atan2(leftStickX, leftStickY);
 
-                // Convert to degrees from -180 to 180
                 double angleDegrees = Math.toDegrees(angleRadians);
 
-                // Convert to 0 to 360 degrees
                 if (angleDegrees < 0) {
                     angleDegrees += 360;
                 }

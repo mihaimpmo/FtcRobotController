@@ -22,7 +22,6 @@ public class SwerveEncoderReader extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        // --- HARDWARE CONFIGURATION ---
         try {
             flEncoder = hardwareMap.get(AnalogInput.class, "fl_enc");
             frEncoder = hardwareMap.get(AnalogInput.class, "fr_enc");
@@ -51,15 +50,12 @@ public class SwerveEncoderReader extends LinearOpMode {
 
         waitForStart();
 
-        // Keep the servos powered
         flSteer.setPower(0.01);
         frSteer.setPower(0.01);
         blSteer.setPower(0.01);
         brSteer.setPower(0.01);
 
         while (opModeIsActive()) {
-
-            // Display the results in the telemetry
             telemetry.addLine("--- Front Left ---");
             displayModuleData(flEncoder, SteeringConstants.FL_VOLTAGE_OFFSET);
             telemetry.addLine("--- Front Right ---");
@@ -71,7 +67,6 @@ public class SwerveEncoderReader extends LinearOpMode {
             telemetry.update();
         }
 
-        // Stop the servos when the OpMode is stopped
         flSteer.setPower(0);
         frSteer.setPower(0);
         blSteer.setPower(0);
@@ -79,22 +74,17 @@ public class SwerveEncoderReader extends LinearOpMode {
     }
 
     private void displayModuleData(AnalogInput encoder, double voltageOffset) {
-        // Read the raw voltage
         double currentVoltage = encoder.getVoltage();
 
-        // Subtract the offset to get the adjusted voltage
         double adjustedVoltage = currentVoltage - voltageOffset;
 
-        // Wrap the voltage if it's negative
         if (adjustedVoltage < 0) {
             adjustedVoltage += SteeringConstants.MAX_VOLTAGE;
         }
 
-        // Convert the adjusted voltage to a servo angle (0-360 degrees)
         double servoAngle = (adjustedVoltage / SteeringConstants.MAX_VOLTAGE) * 360.0;
 
-        // Convert the servo angle to the wheel angle
-        double wheelAngle = servoAngle; // SteeringConstants.SERVO_TO_WHEEL_RATIO;
+        double wheelAngle = servoAngle;
 
         telemetry.addData("Raw Voltage", "%.4f V", currentVoltage);
         telemetry.addData("Adjusted Voltage", "%.4f V", adjustedVoltage);

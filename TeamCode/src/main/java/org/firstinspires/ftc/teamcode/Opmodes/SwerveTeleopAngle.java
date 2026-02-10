@@ -35,7 +35,6 @@ public class SwerveTeleopAngle extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            // Outtake: Cross to spin, bumpers change speed
             if (gamepad2.cross) {
                 if (gamepad2.left_bumper) {
                     outtake.setTargetRPM(1500);
@@ -66,13 +65,11 @@ public class SwerveTeleopAngle extends LinearOpMode {
             if (Math.abs(leftStickY) < ControlConstants.JOYSTICK_DEADBAND) leftStickY = 0;
             if (Math.abs(rotationInput) < ControlConstants.JOYSTICK_DEADBAND) rotationInput = 0;
 
-            // Angle display calculation
             double magnitude = Math.sqrt(leftStickX * leftStickX + leftStickY * leftStickY);
             double joystickAngleRadians = Math.atan2(leftStickY, leftStickX);
             double joystickAngleDegrees = Math.toDegrees(joystickAngleRadians);
             if (joystickAngleDegrees < 0) joystickAngleDegrees += 360;
 
-            // Convert joystick frame to robot frame (-90° rotation)
             double robotAngleDegrees = joystickAngleDegrees - 90.0;
             if (robotAngleDegrees < 0) robotAngleDegrees += 360;
 

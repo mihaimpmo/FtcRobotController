@@ -7,10 +7,6 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Subsystems.SwerveDrive;
 
-/**
- * Diagnostic opmode to debug the 45° strafe angle issue
- * Displays raw values and kinematics outputs
- */
 @TeleOp(name = "Diagnostic: Strafe Angles", group = "Test")
 public class DiagnosticStrafe extends LinearOpMode {
     private SwerveDrive drive;
@@ -27,20 +23,16 @@ public class DiagnosticStrafe extends LinearOpMode {
         waitForStart();
 
         while (opModeIsActive()) {
-            // Read raw joystick
             double rawX = gamepad1.left_stick_x;
             double rawY = gamepad1.left_stick_y;
 
-            // Apply inversions (matching SwerveTeleopAngle)
             double leftStickX = rawX;
             double leftStickY = -rawY;
 
-            // Map to robot frame
             double forward = leftStickY * 3.0;
             double strafe = -leftStickX * 3.0;
             double rotation = 0.0;
 
-            // Show what we're sending
             telemetry.addLine("=== INPUTS ===");
             telemetry.addData("Raw Stick", "X=%.2f, Y=%.2f", rawX, rawY);
             telemetry.addData("After Invert", "X=%.2f, Y=%.2f", leftStickX, leftStickY);
@@ -52,9 +44,8 @@ public class DiagnosticStrafe extends LinearOpMode {
             telemetry.addData("Rotation", "%.2f rad/s", rotation);
             telemetry.addLine();
 
-            // Only drive if there's input
             if (Math.abs(forward) > 0.1 || Math.abs(strafe) > 0.1) {
-                drive.drive(forward, strafe, rotation, false);  // No optimization for clarity
+                drive.drive(forward, strafe, rotation, false);
             }
 
             telemetry.addLine("=== MODULE STATES ===");
