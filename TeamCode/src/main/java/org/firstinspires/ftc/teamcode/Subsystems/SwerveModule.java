@@ -42,14 +42,14 @@ public class SwerveModule {
         driveMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         driveMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        heldAngle = encoder.getWheelAngle();
+        heldAngle = encoder.getWheelAngleRad();
         targetAngle = heldAngle;
 
         steerServo.setPower(0);
     }
 
     public double getAngle() {
-        return encoder.getWheelAngle();
+        return encoder.getWheelAngleRad();
     }
 
     public void set(double angle, double speed) {
