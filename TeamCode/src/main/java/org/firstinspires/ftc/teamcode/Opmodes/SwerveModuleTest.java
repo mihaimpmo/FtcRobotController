@@ -2,12 +2,12 @@ package org.firstinspires.ftc.teamcode.Opmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 import org.firstinspires.ftc.teamcode.Constants.SteeringConstants;
-import org.firstinspires.ftc.teamcode.Hardware.AxonEncoder;
+import org.firstinspires.ftc.teamcode.Hardware.RevThroughBoreEncoder;
 import org.firstinspires.ftc.teamcode.Subsystems.SwerveModule;
 
 @TeleOp(name = "Swerve Module Test", group = "Test")
@@ -19,32 +19,52 @@ public class SwerveModuleTest extends LinearOpMode {
         fl = new SwerveModule(
                 hardwareMap.get(DcMotorEx.class, "fl"),
                 hardwareMap.get(CRServo.class, "fl_servo"),
-                new AxonEncoder(hardwareMap.get(AnalogInput.class, "fl_enc"), SteeringConstants.FL_VOLTAGE_OFFSET),
-                false, true, "FL"
+                new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.FL_ENCODER_NAME), SteeringConstants.FL_ENCODER_SHARED),
+                hardwareMap.get(DigitalChannel.class, SteeringConstants.FL_SWITCH_NAME),
+                false, true, "FL",
+                SteeringConstants.FL_TICK_OFFSET
         );
 
         fr = new SwerveModule(
                 hardwareMap.get(DcMotorEx.class, "fr"),
                 hardwareMap.get(CRServo.class, "fr_servo"),
-                new AxonEncoder(hardwareMap.get(AnalogInput.class, "fr_enc"), SteeringConstants.FR_VOLTAGE_OFFSET),
-                false, true, "FR"
+                new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.FR_ENCODER_NAME), SteeringConstants.FR_ENCODER_SHARED),
+                hardwareMap.get(DigitalChannel.class, SteeringConstants.FR_SWITCH_NAME),
+                false, true, "FR",
+                SteeringConstants.FR_TICK_OFFSET
         );
 
         bl = new SwerveModule(
                 hardwareMap.get(DcMotorEx.class, "bl"),
                 hardwareMap.get(CRServo.class, "bl_servo"),
-                new AxonEncoder(hardwareMap.get(AnalogInput.class, "bl_enc"), SteeringConstants.BL_VOLTAGE_OFFSET),
-                false, true, "BL"
+                new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.BL_ENCODER_NAME), SteeringConstants.BL_ENCODER_SHARED),
+                hardwareMap.get(DigitalChannel.class, SteeringConstants.BL_SWITCH_NAME),
+                false, true, "BL",
+                SteeringConstants.BL_TICK_OFFSET
         );
 
         br = new SwerveModule(
                 hardwareMap.get(DcMotorEx.class, "br"),
                 hardwareMap.get(CRServo.class, "br_servo"),
-                new AxonEncoder(hardwareMap.get(AnalogInput.class, "br_enc"), SteeringConstants.BR_VOLTAGE_OFFSET),
-                false, true, "BR"
+                new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.BR_ENCODER_NAME), SteeringConstants.BR_ENCODER_SHARED),
+                hardwareMap.get(DigitalChannel.class, SteeringConstants.BR_SWITCH_NAME),
+                false, true, "BR",
+                SteeringConstants.BR_TICK_OFFSET
         );
 
+        telemetry.addLine("Swerve Module Test");
+        telemetry.addLine("Press START to home and begin");
+        telemetry.update();
+
         waitForStart();
+
+        // Home all modules
+        telemetry.addLine("Homing...");
+        telemetry.update();
+        fl.homeModule(this);
+        fr.homeModule(this);
+        bl.homeModule(this);
+        br.homeModule(this);
 
         double targetDegrees = 0;
 

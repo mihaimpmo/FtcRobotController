@@ -24,9 +24,9 @@ public class OuttakeHardware {
         WheelMotor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         WheelMotor2.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        WheelMotor1.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        WheelMotor2.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        WheelMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-        WheelMotor2.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        // RUN_WITHOUT_ENCODER: encoder pins on these ports are used by swerve steering encoders,
+        // so we cannot use encoder-based velocity control for the outtake motors.
+        WheelMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        WheelMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 }

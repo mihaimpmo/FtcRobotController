@@ -25,22 +25,45 @@ public class SwerveTeleop extends LinearOpMode {
         intake = new Intake(hardware);
 
         telemetry.addLine("Robot-Centric Swerve Drive Ready");
-        telemetry.addLine("Left Stick: Forward/Strafe");
-        telemetry.addLine("Right Stick X: Rotation");
-        telemetry.addLine("D-Pad Up: Reset modules to 0");
+        telemetry.addLine("Press START to home modules and begin");
         telemetry.update();
 
         waitForStart();
 
+        // Phase 1: Home all modules (find limit switches)
+        telemetry.addLine("Homing swerve modules...");
+        telemetry.update();
+
+        boolean homingSuccess = drive.homeAllModules(this);
+
+        if (!homingSuccess) {
+            telemetry.addLine("WARNING: Not all modules homed successfully!");
+            telemetry.update();
+            sleep(2000);
+        }
+
+        // Phase 2: Steer all wheels to forward (angle 0) using offsets
+        double alignTolerance = Math.toRadians(2.0);
+        while (opModeIsActive() && !drive.allAtZero(alignTolerance)) {
+            drive.steerAllToZero();
+            telemetry.addLine("Aligning wheels to forward...");
+            drive.logDetailed(telemetry);
+            telemetry.update();
+        }
+
+        // Phase 3: Reset all encoders — current position becomes 0
+        drive.resetAllEncoders();
+        telemetry.addLine("Encoders reset. All modules at 0.");
+        telemetry.update();
+        sleep(200);
+
+        // Phase 4: Drive
         while (opModeIsActive()) {
 
             if (gamepad2.cross) {
                 if(gamepad2.left_bumper) outtake.setTargetRPM(OuttakeConstants.TARGET_RPM + 250);
                 else outtake.setTargetRPM(OuttakeConstants.TARGET_RPM);
-
-            }
-            else {
-
+            } else {
                 outtake.setTargetRPM(0);
             }
             outtake.rampShoot(gamepad2.dpad_up);
@@ -67,7 +90,7 @@ public class SwerveTeleop extends LinearOpMode {
             drive.drive(forward, strafe, rotation);
 
             telemetry.addData("Fwd/Str/Rot", "%.1f / %.1f / %.1f", forward, strafe, rotation);
-            drive.log(telemetry);
+            drive.logDetailed(telemetry);
             telemetry.update();
         }
     }

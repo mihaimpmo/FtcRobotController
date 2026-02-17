@@ -2,37 +2,30 @@ package org.firstinspires.ftc.teamcode.Opmodes;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.AnalogInput;
 import com.qualcomm.robotcore.hardware.CRServo;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.teamcode.Constants.SteeringConstants;
+import org.firstinspires.ftc.teamcode.Hardware.RevThroughBoreEncoder;
 
 @TeleOp(name = "Swerve Encoder Reader", group = "Test")
 public class SwerveEncoderReader extends LinearOpMode {
 
-    private AnalogInput flEncoder;
-    private AnalogInput frEncoder;
-    private AnalogInput blEncoder;
-    private AnalogInput brEncoder;
-
-    private CRServo flSteer;
-    private CRServo frSteer;
-    private CRServo blSteer;
-    private CRServo brSteer;
-
     @Override
     public void runOpMode() {
+        RevThroughBoreEncoder flEnc, frEnc, blEnc, brEnc;
+        CRServo flServo, frServo, blServo, brServo;
+
         try {
-            flEncoder = hardwareMap.get(AnalogInput.class, "fl_enc");
-            frEncoder = hardwareMap.get(AnalogInput.class, "fr_enc");
-            blEncoder = hardwareMap.get(AnalogInput.class, "bl_enc");
-            brEncoder = hardwareMap.get(AnalogInput.class, "br_enc");
+            flEnc = new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.FL_ENCODER_NAME), SteeringConstants.FL_ENCODER_SHARED);
+            frEnc = new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.FR_ENCODER_NAME), SteeringConstants.FR_ENCODER_SHARED);
+            blEnc = new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.BL_ENCODER_NAME), SteeringConstants.BL_ENCODER_SHARED);
+            brEnc = new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.BR_ENCODER_NAME), SteeringConstants.BR_ENCODER_SHARED);
 
-            flSteer = hardwareMap.get(CRServo.class, "fl_servo");
-            frSteer = hardwareMap.get(CRServo.class, "fr_servo");
-            blSteer = hardwareMap.get(CRServo.class, "bl_servo");
-            brSteer = hardwareMap.get(CRServo.class, "br_servo");
-
+            flServo = hardwareMap.get(CRServo.class, "fl_servo");
+            frServo = hardwareMap.get(CRServo.class, "fr_servo");
+            blServo = hardwareMap.get(CRServo.class, "bl_servo");
+            brServo = hardwareMap.get(CRServo.class, "br_servo");
         } catch (Exception e) {
             telemetry.addData("Error", "Could not find all devices. Please check your configuration.");
             telemetry.addLine(e.getMessage());
@@ -42,52 +35,42 @@ public class SwerveEncoderReader extends LinearOpMode {
             return;
         }
 
-        telemetry.addLine("Swerve Encoder Reader");
-        telemetry.addLine("Ready to start.");
-        telemetry.addLine("This OpMode now uses voltage offsets.");
-        telemetry.addLine("If calibrated correctly, all wheel angles should be near 0 when pointing straight forward.");
+        telemetry.addLine("Swerve Encoder Reader (Rev Through Bore)");
+        telemetry.addLine("Shows raw ticks and computed angles.");
+        telemetry.addLine("No homing — just raw encoder data.");
         telemetry.update();
 
         waitForStart();
 
-        flSteer.setPower(0.01);
-        frSteer.setPower(0.01);
-        blSteer.setPower(0.01);
-        brSteer.setPower(0.01);
+        // Hold servos with minimal power
+        flServo.setPower(0.01);
+        frServo.setPower(0.01);
+        blServo.setPower(0.01);
+        brServo.setPower(0.01);
 
         while (opModeIsActive()) {
-            telemetry.addLine("--- Front Left ---");
-            displayModuleData(flEncoder, SteeringConstants.FL_VOLTAGE_OFFSET);
-            telemetry.addLine("--- Front Right ---");
-            displayModuleData(frEncoder, SteeringConstants.FR_VOLTAGE_OFFSET);
-            telemetry.addLine("--- Back Left ---");
-            displayModuleData(blEncoder, SteeringConstants.BL_VOLTAGE_OFFSET);
-            telemetry.addLine("--- Back Right ---");
-            displayModuleData(brEncoder, SteeringConstants.BR_VOLTAGE_OFFSET);
+            displayModule("FL", flEnc);
+            displayModule("FR", frEnc);
+            displayModule("BL", blEnc);
+            displayModule("BR", brEnc);
             telemetry.update();
         }
 
-        flSteer.setPower(0);
-        frSteer.setPower(0);
-        blSteer.setPower(0);
-        brSteer.setPower(0);
+        flServo.setPower(0);
+        frServo.setPower(0);
+        blServo.setPower(0);
+        brServo.setPower(0);
     }
 
-    private void displayModuleData(AnalogInput encoder, double voltageOffset) {
-        double currentVoltage = encoder.getVoltage();
-
-        double adjustedVoltage = currentVoltage - voltageOffset;
-
-        if (adjustedVoltage < 0) {
-            adjustedVoltage += SteeringConstants.MAX_VOLTAGE;
-        }
-
-        double servoAngle = (adjustedVoltage / SteeringConstants.MAX_VOLTAGE) * 360.0;
-
-        double wheelAngle = servoAngle;
-
-        telemetry.addData("Raw Voltage", "%.4f V", currentVoltage);
-        telemetry.addData("Adjusted Voltage", "%.4f V", adjustedVoltage);
-        telemetry.addData("Wheel Angle", "%.1f degrees", wheelAngle);
+    private void displayModule(String name, RevThroughBoreEncoder encoder) {
+        int rawTicks = encoder.getRawTicks();
+        double encoderAngleDeg = ((rawTicks % SteeringConstants.ENCODER_TICKS_PER_REV) / (double) SteeringConstants.ENCODER_TICKS_PER_REV) * 360.0;
+        if (encoderAngleDeg < 0) encoderAngleDeg += 360.0;
+        double wheelAngleDeg = ((rawTicks % SteeringConstants.TICKS_PER_WHEEL_REV) / (double) SteeringConstants.TICKS_PER_WHEEL_REV) * 360.0;
+        if (wheelAngleDeg < 0) wheelAngleDeg += 360.0;
+        telemetry.addLine("--- " + name + " ---");
+        telemetry.addData("  Raw Ticks", "%d", rawTicks);
+        telemetry.addData("  Encoder Angle", "%.1f deg (per enc rev)", encoderAngleDeg);
+        telemetry.addData("  Wheel Angle", "%.1f deg (per wheel rev)", wheelAngleDeg);
     }
 }

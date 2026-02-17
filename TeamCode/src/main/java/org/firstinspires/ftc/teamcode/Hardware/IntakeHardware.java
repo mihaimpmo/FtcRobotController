@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class IntakeHardware {
-    private static final String intakeMotorName = "I1";
+    private static final String intakeMotorName = "IM1";
     public final DcMotor IntakeMotor;
 
     public IntakeHardware(HardwareMap hardwareMap) {
