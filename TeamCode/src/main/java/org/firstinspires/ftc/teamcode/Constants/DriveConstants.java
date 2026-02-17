@@ -11,8 +11,8 @@ public class DriveConstants {
     public static final double[][] WHEEL_POS = {
         { -0.1925,  0.1925},  // FL
         { -0.1925, -0.1925},  // FR
-        {-0.1925,  0.1925},  // BL
-        {-0.1925, -0.1925},  // BR
+        {  0.1925,  0.1925},  // BL
+        {  0.1925, -0.1925},  // BR
     };
 
     public static double WHEEL_DIAMETER_METERS = 0.0762;

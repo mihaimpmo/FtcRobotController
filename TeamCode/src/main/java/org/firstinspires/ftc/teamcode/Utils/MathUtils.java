@@ -21,14 +21,6 @@ public class MathUtils {
         return wrapRad(to - from);
     }
 
-    public static double angleDiff90(double fromRad, double toRad) {
-        double diff = toRad - fromRad;
-        diff = diff % Math.PI;
-        if (diff > Math.PI / 2) diff -= Math.PI;
-        if (diff < -Math.PI / 2) diff += Math.PI;
-        return diff;
-    }
-
     public static double wrap2Pi(double angle) {
         angle = angle % TWO_PI;
         if (angle < 0) angle += TWO_PI;
@@ -42,10 +34,4 @@ public class MathUtils {
         return wrapped;
     }
 
-    public static double wrap90(double angleDegrees) {
-        double wrapped = angleDegrees % 180.0;
-        if (wrapped >= 90.0) wrapped -= 180.0;
-        if (wrapped <= -90.0) wrapped += 180.0;
-        return wrapped;
-    }
 }

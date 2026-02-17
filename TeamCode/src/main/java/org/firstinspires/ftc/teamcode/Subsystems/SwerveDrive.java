@@ -109,15 +109,6 @@ public class SwerveDrive {
         double wheelDist = Math.sqrt(pos[0][0] * pos[0][0] + pos[0][1] * pos[0][1]);
         rot /= wheelDist;
 
-        // When rotating, disable translation to prevent flip-causing combined angles
-        if (Math.abs(rot) > 0.01) {
-            fwd = 0;
-            str = 0;
-        }
-        if (Math.abs(fwd)> 0.01 || Math.abs(str) > 0.01){
-            rot =0;
-        }
-
         double max = 0;
         double[] ang = new double[4];
         double[] spd = new double[4];

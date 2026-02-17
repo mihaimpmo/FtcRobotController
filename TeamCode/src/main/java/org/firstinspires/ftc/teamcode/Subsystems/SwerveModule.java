@@ -26,7 +26,7 @@ public class SwerveModule {
 
     private double targetAngle;
     private double heldAngle;
-    private double lastError = 0.0;
+    private double lastAngle = 0.0;
     private long lastTime = System.nanoTime();
     private boolean homed = false;
 
@@ -191,72 +191,45 @@ public class SwerveModule {
             heldAngle = angle;
         }
 
-        double rawTargetRad = MathUtils.wrapRad(angle);
         double currentAngle = getAngle();
+        double target = angle;
 
-        final double RIGHT_ANGLE = Math.PI / 2;
-        final double NEAR_90_TOLERANCE = Math.toRadians(5.0);
+        // Unwrap target to be closest to current angle (continuous rotation)
+        while (target - currentAngle > Math.PI) target -= 2 * Math.PI;
+        while (target - currentAngle < -Math.PI) target += 2 * Math.PI;
 
-        double targetRad = rawTargetRad;
+        // Motor flip optimization: if >90° away, reverse motor and flip 180°
+        double error = target - currentAngle;
         boolean motorFlipped = false;
-
-        boolean nearPositive90 = Math.abs(rawTargetRad - RIGHT_ANGLE) < NEAR_90_TOLERANCE;
-        boolean nearNegative90 = Math.abs(rawTargetRad + RIGHT_ANGLE) < NEAR_90_TOLERANCE;
-
-        if (nearPositive90 || nearNegative90) {
-            double pos90 = RIGHT_ANGLE;
-            double neg90 = -RIGHT_ANGLE;
-
-            while (pos90 - currentAngle > Math.PI) pos90 -= 2 * Math.PI;
-            while (pos90 - currentAngle < -Math.PI) pos90 += 2 * Math.PI;
-            while (neg90 - currentAngle > Math.PI) neg90 -= 2 * Math.PI;
-            while (neg90 - currentAngle < -Math.PI) neg90 += 2 * Math.PI;
-
-            if (Math.abs(pos90 - currentAngle) <= Math.abs(neg90 - currentAngle)) {
-                targetRad = pos90;
-                if (nearNegative90) motorFlipped = true;
-            } else {
-                targetRad = neg90;
-                if (nearPositive90) motorFlipped = true;
-            }
-        } else {
-            if (targetRad > RIGHT_ANGLE) {
-                targetRad -= Math.PI;
-                motorFlipped = true;
-            } else if (targetRad <= -RIGHT_ANGLE) {
-                targetRad += Math.PI;
-                motorFlipped = true;
-            }
-
-            while (targetRad - currentAngle > Math.PI) targetRad -= 2 * Math.PI;
-            while (targetRad - currentAngle < -Math.PI) targetRad += 2 * Math.PI;
+        if (Math.abs(error) > Math.PI / 2) {
+            target -= Math.signum(error) * Math.PI;
+            motorFlipped = true;
+            error = target - currentAngle;
         }
 
         if (motorFlipped) speed = -speed;
 
-        double nearestTarget = targetRad;
-
         this.targetAngle = angle;
 
-        double error = nearestTarget - currentAngle;
-
+        // Cosine scaling: reduce drive power when module is misaligned
         double cosineScale = Math.cos(error);
         double drivePower = speed * DriveConstants.DRIVE_FF * cosineScale;
 
+        // PD controller — derivative on measurement to avoid derivative kick
         long now = System.nanoTime();
         double dt = (now - lastTime) / 1e9;
         lastTime = now;
-        double derivative = (dt > 0) ? (error - lastError) / dt : 0;
-        lastError = error;
+        double derivative = (dt > 0) ? -(currentAngle - lastAngle) / dt : 0;
+        lastAngle = currentAngle;
 
-        double steerPower;
-        if (Math.abs(error) < SteeringConstants.STEERING_DEADBAND_RADIANS) {
-            steerPower = (error == 0) ? SteeringConstants.MIN_SERVO_POWER
-                    : Math.signum(error) * SteeringConstants.MIN_SERVO_POWER;
-        } else {
-            steerPower = error * SteeringConstants.STEER_P + derivative * SteeringConstants.STEER_D;
-            steerPower = Math.max(-1.0, Math.min(1.0, steerPower));
+        double steerPower = error * SteeringConstants.STEER_P + derivative * SteeringConstants.STEER_D;
+        // Apply minimum power floor to overcome static friction
+        if (Math.abs(error) > SteeringConstants.STEERING_DEADBAND_RADIANS) {
+            if (Math.abs(steerPower) < SteeringConstants.MIN_SERVO_POWER) {
+                steerPower = Math.signum(steerPower) * SteeringConstants.MIN_SERVO_POWER;
+            }
         }
+        steerPower = Math.max(-1.0, Math.min(1.0, steerPower));
 
         steerServo.setPower(steerInverted ? -steerPower : steerPower);
 
@@ -278,16 +251,16 @@ public class SwerveModule {
         long now = System.nanoTime();
         double dt = (now - lastTime) / 1e9;
         lastTime = now;
-        double derivative = (dt > 0) ? (error - lastError) / dt : 0;
-        lastError = error;
+        double derivative = (dt > 0) ? -(currentAngle - lastAngle) / dt : 0;
+        lastAngle = currentAngle;
 
-        double steerPower;
-        if (Math.abs(error) < SteeringConstants.STEERING_DEADBAND_RADIANS) {
-            steerPower = Math.signum(error) * SteeringConstants.MIN_SERVO_POWER;
-        } else {
-            steerPower = error * SteeringConstants.STEER_P + derivative * SteeringConstants.STEER_D;
-            steerPower = Math.max(-1.0, Math.min(1.0, steerPower));
+        double steerPower = error * SteeringConstants.STEER_P + derivative * SteeringConstants.STEER_D;
+        if (Math.abs(error) > SteeringConstants.STEERING_DEADBAND_RADIANS) {
+            if (Math.abs(steerPower) < SteeringConstants.MIN_SERVO_POWER) {
+                steerPower = Math.signum(steerPower) * SteeringConstants.MIN_SERVO_POWER;
+            }
         }
+        steerPower = Math.max(-1.0, Math.min(1.0, steerPower));
         steerServo.setPower(steerInverted ? -steerPower : steerPower);
 
         heldAngle = angleRad;
@@ -311,7 +284,7 @@ public class SwerveModule {
         encoder.setHomePosition(0);
         heldAngle = 0;
         targetAngle = 0;
-        lastError = 0;
+        lastAngle = 0;
     }
 
     public void hold() {
