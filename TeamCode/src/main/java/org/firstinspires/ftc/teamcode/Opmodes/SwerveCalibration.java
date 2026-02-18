@@ -24,6 +24,12 @@ public class SwerveCalibration extends LinearOpMode {
             blEnc = new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.BL_ENCODER_NAME), SteeringConstants.BL_ENCODER_SHARED);
             brEnc = new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.BR_ENCODER_NAME), SteeringConstants.BR_ENCODER_SHARED);
 
+            // Invert encoders to match SwerveDrive/SwerveModule logic
+            flEnc.setInverted(true);
+            frEnc.setInverted(true);
+            blEnc.setInverted(true);
+            brEnc.setInverted(true);
+
             flLimit = hardwareMap.get(DigitalChannel.class, SteeringConstants.FL_SWITCH_NAME);
             frLimit = hardwareMap.get(DigitalChannel.class, SteeringConstants.FR_SWITCH_NAME);
             blLimit = hardwareMap.get(DigitalChannel.class, SteeringConstants.BL_SWITCH_NAME);
@@ -78,24 +84,31 @@ public class SwerveCalibration extends LinearOpMode {
             int brTicks = brEnc.getPositionTicks();
 
             telemetry.addLine("--- Current Ticks (from home) ---");
-            telemetry.addData("FL", "%d ticks", flTicks);
-            telemetry.addData("FR", "%d ticks", frTicks);
-            telemetry.addData("BL", "%d ticks", blTicks);
-            telemetry.addData("BR", "%d ticks", brTicks);
+            displayCalibration("FL", flEnc, telemetry);
+            displayCalibration("FR", frEnc, telemetry);
+            displayCalibration("BL", blEnc, telemetry);
+            displayCalibration("BR", brEnc, telemetry);
             telemetry.addLine();
-            telemetry.addLine("Align wheels forward, then press A");
+            telemetry.addLine("1. Align wheels forward, then press A to capture.");
+            telemetry.addLine("2. Turn wheel 90 degrees. If 'Deg' shows 45 or 180, your RATIO is wrong.");
 
             if (gamepad1.a) {
                 telemetry.addLine();
                 telemetry.addLine("--- Copy to SteeringConstants.java ---");
-                telemetry.addData("FL_TICK_OFFSET", "%d", flTicks);
-                telemetry.addData("FR_TICK_OFFSET", "%d", frTicks);
-                telemetry.addData("BL_TICK_OFFSET", "%d", blTicks);
-                telemetry.addData("BR_TICK_OFFSET", "%d", brTicks);
+                telemetry.addData("FL_TICK_OFFSET", "%d", flEnc.getPositionTicks());
+                telemetry.addData("FR_TICK_OFFSET", "%d", frEnc.getPositionTicks());
+                telemetry.addData("BL_TICK_OFFSET", "%d", blEnc.getPositionTicks());
+                telemetry.addData("BR_TICK_OFFSET", "%d", brEnc.getPositionTicks());
             }
 
             telemetry.update();
         }
+    }
+
+    private void displayCalibration(String name, RevThroughBoreEncoder enc, org.firstinspires.ftc.robotcore.external.Telemetry telemetry) {
+        int ticks = enc.getPositionTicks();
+        double deg = Math.toDegrees(enc.getWheelAngleRad());
+        telemetry.addData(name, "%6d ticks (%5.1f°)", ticks, deg);
     }
 
     private static final int STAGE_FAST = 0, STAGE_BACKOFF = 1, STAGE_SLOW = 2, STAGE_DONE = 3;

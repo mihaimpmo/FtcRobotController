@@ -16,39 +16,47 @@ public class SwerveModuleTest extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        RevThroughBoreEncoder flEnc = new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.FL_ENCODER_NAME), SteeringConstants.FL_ENCODER_SHARED);
+        flEnc.setInverted(true);
         fl = new SwerveModule(
                 hardwareMap.get(DcMotorEx.class, "fl"),
                 hardwareMap.get(CRServo.class, "fl_servo"),
-                new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.FL_ENCODER_NAME), SteeringConstants.FL_ENCODER_SHARED),
+                flEnc,
                 hardwareMap.get(DigitalChannel.class, SteeringConstants.FL_SWITCH_NAME),
-                false, true, "FL",
+                true, true, "FL",
                 SteeringConstants.FL_TICK_OFFSET
         );
 
+        RevThroughBoreEncoder frEnc = new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.FR_ENCODER_NAME), SteeringConstants.FR_ENCODER_SHARED);
+        frEnc.setInverted(true);
         fr = new SwerveModule(
                 hardwareMap.get(DcMotorEx.class, "fr"),
                 hardwareMap.get(CRServo.class, "fr_servo"),
-                new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.FR_ENCODER_NAME), SteeringConstants.FR_ENCODER_SHARED),
+                frEnc,
                 hardwareMap.get(DigitalChannel.class, SteeringConstants.FR_SWITCH_NAME),
-                false, true, "FR",
+                true, true, "FR",
                 SteeringConstants.FR_TICK_OFFSET
         );
 
+        RevThroughBoreEncoder blEnc = new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.BL_ENCODER_NAME), SteeringConstants.BL_ENCODER_SHARED);
+        blEnc.setInverted(true);
         bl = new SwerveModule(
                 hardwareMap.get(DcMotorEx.class, "bl"),
                 hardwareMap.get(CRServo.class, "bl_servo"),
-                new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.BL_ENCODER_NAME), SteeringConstants.BL_ENCODER_SHARED),
+                blEnc,
                 hardwareMap.get(DigitalChannel.class, SteeringConstants.BL_SWITCH_NAME),
-                false, true, "BL",
+                true, true, "BL",
                 SteeringConstants.BL_TICK_OFFSET
         );
 
+        RevThroughBoreEncoder brEnc = new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.BR_ENCODER_NAME), SteeringConstants.BR_ENCODER_SHARED);
+        brEnc.setInverted(true);
         br = new SwerveModule(
                 hardwareMap.get(DcMotorEx.class, "br"),
                 hardwareMap.get(CRServo.class, "br_servo"),
-                new RevThroughBoreEncoder(hardwareMap.get(DcMotorEx.class, SteeringConstants.BR_ENCODER_NAME), SteeringConstants.BR_ENCODER_SHARED),
+                brEnc,
                 hardwareMap.get(DigitalChannel.class, SteeringConstants.BR_SWITCH_NAME),
-                false, true, "BR",
+                true, true, "BR",
                 SteeringConstants.BR_TICK_OFFSET
         );
 
@@ -68,11 +76,6 @@ public class SwerveModuleTest extends LinearOpMode {
 
         double targetDegrees = 0;
 
-        fl.set(0, 0);
-        fr.set(0, 0);
-        bl.set(0, 0);
-        br.set(0, 0);
-
         while (opModeIsActive()) {
             if (gamepad1.dpad_right) { targetDegrees += 5; sleep(100); }
             if (gamepad1.dpad_left) { targetDegrees -= 5; sleep(100); }
@@ -84,10 +87,15 @@ public class SwerveModuleTest extends LinearOpMode {
             while (targetDegrees < 0) targetDegrees += 360;
 
             double targetRad = Math.toRadians(targetDegrees);
-            fl.set(targetRad, 0);
-            fr.set(targetRad, 0);
-            bl.set(targetRad, 0);
-            br.set(targetRad, 0);
+            fl.setTarget(targetRad, 0);
+            fr.setTarget(targetRad, 0);
+            bl.setTarget(targetRad, 0);
+            br.setTarget(targetRad, 0);
+
+            fl.update();
+            fr.update();
+            bl.update();
+            br.update();
 
             telemetry.addLine("Target: " + String.format("%.0f\u00b0", targetDegrees));
             telemetry.addLine("DPad L/R: \u00b15\u00b0 | Bumpers: \u00b145\u00b0 | A: Reset");

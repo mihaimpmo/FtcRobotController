@@ -108,4 +108,11 @@ public class Outtake {
         rampState = RampState.IDLE;
         ramp.moveTo(OuttakeConstants.RAMP_IDLE);
     }
+
+    public void log(org.firstinspires.ftc.robotcore.external.Telemetry telemetry) {
+        telemetry.addLine("--- Outtake ---");
+        telemetry.addData("  Target RPM", "%.0f", targetRPM);
+        telemetry.addData("  Motor Power", "%.2f", motorPower);
+        telemetry.addData("  Ramp State", "%s", rampState);
+    }
 }

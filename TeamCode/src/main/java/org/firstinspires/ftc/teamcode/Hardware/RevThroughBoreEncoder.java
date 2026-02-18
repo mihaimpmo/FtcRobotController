@@ -8,6 +8,7 @@ import org.firstinspires.ftc.teamcode.Constants.SteeringConstants;
 public class RevThroughBoreEncoder {
     private final DcMotorEx encoderMotor;
     private int tickOffset;
+    private boolean inverted = false;
 
     /**
      * Create an encoder on a dedicated (empty) motor port.
@@ -33,17 +34,24 @@ public class RevThroughBoreEncoder {
         this.tickOffset = encoderMotor.getCurrentPosition();
     }
 
+    public void setInverted(boolean inverted) {
+        this.inverted = inverted;
+    }
+
     public int getRawTicks() {
-        return encoderMotor.getCurrentPosition();
+        int ticks = encoderMotor.getCurrentPosition();
+        return inverted ? -ticks : ticks;
     }
 
     /**
      * Set the encoder zero point during homing.
      * After the limit switch triggers, call this with the calibrated tick offset
-     * so that 0 ticks = wheels pointing forward.
+     * (the distance from the switch to the 'forward' position).
      */
     public void setHomePosition(int calibratedTickOffset) {
-        this.tickOffset = getRawTicks() + calibratedTickOffset;
+        // Correct math: current raw minus the offset results in the offset 
+        // being the new current position.
+        this.tickOffset = getRawTicks() - calibratedTickOffset;
     }
 
     public int getPositionTicks() {

@@ -24,13 +24,13 @@ public class SwerveTeleop extends LinearOpMode {
         outtake = new Outtake(hardware);
         intake = new Intake(hardware);
 
-        telemetry.addLine("Robot-Centric Swerve Drive Ready");
+        telemetry.addLine("Swerve Drive Ready");
         telemetry.addLine("Press START to home modules and begin");
         telemetry.update();
 
         waitForStart();
 
-        // Phase 1: Home all modules (find limit switches)
+        // Home all modules (finds limit switches, sets encoder zeros via calibrated offsets)
         telemetry.addLine("Homing swerve modules...");
         telemetry.update();
 
@@ -42,23 +42,12 @@ public class SwerveTeleop extends LinearOpMode {
             sleep(2000);
         }
 
-        // Phase 2: Steer all wheels to forward (angle 0) using offsets
-        double alignTolerance = Math.toRadians(2.0);
-        while (opModeIsActive() && !drive.allAtZero(alignTolerance)) {
-            drive.steerAllToZero();
-            telemetry.addLine("Aligning wheels to forward...");
-            drive.logDetailed(telemetry);
-            telemetry.update();
-        }
-
-        // Phase 3: Reset all encoders — current position becomes 0
-        drive.resetAllEncoders();
-        telemetry.addLine("Encoders reset. All modules at 0.");
-        telemetry.update();
-        sleep(200);
-
-        // Phase 4: Drive
+        // Drive loop — after homing, encoders know absolute position, no reset needed
+        long lastLoopTime = System.nanoTime();
         while (opModeIsActive()) {
+            long currentTime = System.nanoTime();
+            double loopTimeMs = (currentTime - lastLoopTime) / 1e6;
+            lastLoopTime = currentTime;
 
             if (gamepad2.cross) {
                 if(gamepad2.left_bumper) outtake.setTargetRPM(OuttakeConstants.TARGET_RPM + 250);
@@ -75,10 +64,6 @@ public class SwerveTeleop extends LinearOpMode {
                 intake.Stop();
             }
 
-            if (gamepad2.dpad_up) {
-                drive.zero();
-            }
-
             double forward = -gamepad1.left_stick_y;
             double strafe = -gamepad1.left_stick_x;
             double rotation = -gamepad1.right_stick_x;
@@ -88,9 +73,13 @@ public class SwerveTeleop extends LinearOpMode {
             if (Math.abs(rotation) < ControlConstants.DEADBAND) rotation = 0;
 
             drive.drive(forward, strafe, rotation);
+            drive.update();
 
+            telemetry.addData("Loop Time", "%.1f ms (%.0f Hz)", loopTimeMs, 1000.0 / loopTimeMs);
             telemetry.addData("Fwd/Str/Rot", "%.1f / %.1f / %.1f", forward, strafe, rotation);
             drive.logDetailed(telemetry);
+            intake.log(telemetry);
+            outtake.log(telemetry);
             telemetry.update();
         }
     }

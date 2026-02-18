@@ -48,11 +48,11 @@ public class SteeringConstants {
     public static boolean LIMIT_SWITCH_ACTIVE_STATE = false;
 
     // Steering PD
-    public static double STEER_P = 0.65;
+    public static double STEER_P = 0.8;
     public static double STEER_I = 0.0;
-    public static double STEER_D = 0.0;
+    public static double STEER_D = 0;
 
     public static double STEERING_DEADBAND_RADIANS = 0.01;
-    public static double MIN_SERVO_POWER = 0.01;
-    public static double STATIC_FRICTION_COMPENSATION = 0.03;
+    public static double MIN_SERVO_POWER = 0.05;
+    public static double STATIC_FRICTION_COMPENSATION = 0.0;
 }
