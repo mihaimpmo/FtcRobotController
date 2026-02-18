@@ -72,7 +72,7 @@ public class SwerveTeleop extends LinearOpMode {
             if (Math.abs(strafe) < ControlConstants.DEADBAND) strafe = 0;
             if (Math.abs(rotation) < ControlConstants.DEADBAND) rotation = 0;
 
-            drive.drive(forward, strafe, rotation);
+            drive.drive(forward * 5.0, strafe * 5.0, rotation * 5.0);
             drive.update();
 
             telemetry.addData("Loop Time", "%.1f ms (%.0f Hz)", loopTimeMs, 1000.0 / loopTimeMs);

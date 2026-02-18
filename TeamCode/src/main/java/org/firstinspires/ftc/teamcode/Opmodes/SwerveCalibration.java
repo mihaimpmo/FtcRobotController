@@ -53,9 +53,10 @@ public class SwerveCalibration extends LinearOpMode {
         }
 
         telemetry.addLine("Swerve Calibration (Rev Through Bore)");
-        telemetry.addLine("1. Press START to home all modules");
+        telemetry.addLine("1. Press START to home all modules (find switches)");
         telemetry.addLine("2. Manually align all wheels straight forward");
-        telemetry.addLine("3. Press A to capture tick offsets");
+        telemetry.addLine("3. Ticks shown will be your offsets. Press Y to show final constants.");
+        telemetry.addLine("4. Press A to TEMPORARILY zero display (for checking alignment).");
         telemetry.update();
 
         waitForStart();
@@ -73,32 +74,36 @@ public class SwerveCalibration extends LinearOpMode {
 
         telemetry.addLine("Homing complete!");
         telemetry.addLine("Manually align all wheels straight forward.");
-        telemetry.addLine("Press A to capture tick offsets.");
         telemetry.update();
 
         // Phase 2: User aligns wheels, capture offsets
         while (opModeIsActive()) {
-            int flTicks = flEnc.getPositionTicks();
-            int frTicks = frEnc.getPositionTicks();
-            int blTicks = blEnc.getPositionTicks();
-            int brTicks = brEnc.getPositionTicks();
-
-            telemetry.addLine("--- Current Ticks (from home) ---");
+            telemetry.addLine("--- Ticks from Limit Switch (Offsets) ---");
             displayCalibration("FL", flEnc, telemetry);
             displayCalibration("FR", frEnc, telemetry);
             displayCalibration("BL", blEnc, telemetry);
             displayCalibration("BR", brEnc, telemetry);
             telemetry.addLine();
-            telemetry.addLine("1. Align wheels forward, then press A to capture.");
-            telemetry.addLine("2. Turn wheel 90 degrees. If 'Deg' shows 45 or 180, your RATIO is wrong.");
+            telemetry.addLine("1. Align wheels forward.");
+            telemetry.addLine("2. Copy the numbers above to SteeringConstants.java");
+            telemetry.addLine("   OR press Y to see the code block.");
+            telemetry.addLine("3. Press A to reset display zero (for testing only).");
 
             if (gamepad1.a) {
+                // Temporary reset to check alignment/ratio
+                flEnc.setHomePosition(0);
+                frEnc.setHomePosition(0);
+                blEnc.setHomePosition(0);
+                brEnc.setHomePosition(0);
+            }
+
+            if (gamepad1.y) {
                 telemetry.addLine();
-                telemetry.addLine("--- Copy to SteeringConstants.java ---");
-                telemetry.addData("FL_TICK_OFFSET", "%d", flEnc.getPositionTicks());
-                telemetry.addData("FR_TICK_OFFSET", "%d", frEnc.getPositionTicks());
-                telemetry.addData("BL_TICK_OFFSET", "%d", blEnc.getPositionTicks());
-                telemetry.addData("BR_TICK_OFFSET", "%d", brEnc.getPositionTicks());
+                telemetry.addLine("--- Copy these to SteeringConstants.java ---");
+                telemetry.addData("public static int FL_TICK_OFFSET =", "%d;", flEnc.getPositionTicks());
+                telemetry.addData("public static int FR_TICK_OFFSET =", "%d;", frEnc.getPositionTicks());
+                telemetry.addData("public static int BL_TICK_OFFSET =", "%d;", blEnc.getPositionTicks());
+                telemetry.addData("public static int BR_TICK_OFFSET =", "%d;", brEnc.getPositionTicks());
             }
 
             telemetry.update();

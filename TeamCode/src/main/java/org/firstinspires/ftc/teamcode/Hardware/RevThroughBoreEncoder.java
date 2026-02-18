@@ -10,26 +10,20 @@ public class RevThroughBoreEncoder {
     private int tickOffset;
     private boolean inverted = false;
 
-    /**
-     * Create an encoder on a dedicated (empty) motor port.
-     * Resets the encoder count to 0 on construction.
-     */
+
     public RevThroughBoreEncoder(DcMotorEx encoderMotor) {
         this(encoderMotor, false);
     }
 
-    /**
-     * @param encoderMotor  the motor port the encoder is plugged into
-     * @param sharedPort    true if this port is also driving a motor (outtake/intake).
-     *                      When true, we only read the encoder — we do NOT reset it
-     *                      or change the motor's run mode.
-     */
+
     public RevThroughBoreEncoder(DcMotorEx encoderMotor, boolean sharedPort) {
         this.encoderMotor = encoderMotor;
         if (!sharedPort) {
             this.encoderMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-            this.encoderMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         }
+        // Always ensure RUN_WITHOUT_ENCODER so the hub's motor controller doesn't
+        // use the encoder pins for velocity PID (which corrupts steering readings)
+        this.encoderMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         // Record initial position as baseline — homing will set the real zero
         this.tickOffset = encoderMotor.getCurrentPosition();
     }
@@ -43,14 +37,9 @@ public class RevThroughBoreEncoder {
         return inverted ? -ticks : ticks;
     }
 
-    /**
-     * Set the encoder zero point during homing.
-     * After the limit switch triggers, call this with the calibrated tick offset
-     * (the distance from the switch to the 'forward' position).
-     */
+
     public void setHomePosition(int calibratedTickOffset) {
-        // Correct math: current raw minus the offset results in the offset 
-        // being the new current position.
+
         this.tickOffset = getRawTicks() - calibratedTickOffset;
     }
 

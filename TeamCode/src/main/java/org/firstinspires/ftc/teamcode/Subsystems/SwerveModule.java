@@ -83,12 +83,12 @@ public class SwerveModule {
         double currentAngle = getAngle();
         Rotation2d currentRotation = new Rotation2d(currentAngle);
 
-        // FTCLib Optimization: Finds shortest path, flips motor if >90 deg
         SwerveModuleState optimized = SwerveModuleState.optimize(targetState, currentRotation);
-        
+
+        wheelFlipped = Math.abs(optimized.angle.minus(targetState.angle).getRadians()) > 1.0;
+
         // Shortest path error in radians (Guaranteed <= PI/2)
         double steerError = optimized.angle.minus(currentRotation).getRadians();
-        wheelFlipped = Math.abs(optimized.angle.minus(targetState.angle).getRadians()) > 1.0;
 
         // PD Controller
         long now = System.nanoTime();
@@ -104,6 +104,7 @@ public class SwerveModule {
             if (Math.abs(steerPower) < SteeringConstants.MIN_SERVO_POWER) {
                 steerPower = Math.signum(steerPower) * SteeringConstants.MIN_SERVO_POWER;
             }
+            steerPower = Math.max(-1.0, Math.min(1.0, steerPower));
         } else {
             steerPower = 0;
         }

@@ -20,18 +20,25 @@ public class SwerveDrive {
     private final SwerveDriveKinematics kinematics;
 
     public SwerveDrive(HardwareMap hardwareMap) {
+        // FL: Fixing oscillation by decoupling (Encoder=true, Steer=false)
+        // Left side (FL, BL) drive power flipped based on user feedback
         fl = createModule(hardwareMap, "fl",
                 SteeringConstants.FL_ENCODER_NAME, SteeringConstants.FL_ENCODER_SHARED,
-                SteeringConstants.FL_SWITCH_NAME, SteeringConstants.FL_TICK_OFFSET, true, true);
+                SteeringConstants.FL_SWITCH_NAME, SteeringConstants.FL_TICK_OFFSET, 
+                false, true, false); 
         fr = createModule(hardwareMap, "fr",
                 SteeringConstants.FR_ENCODER_NAME, SteeringConstants.FR_ENCODER_SHARED,
-                SteeringConstants.FR_SWITCH_NAME, SteeringConstants.FR_TICK_OFFSET, true, true);
+                SteeringConstants.FR_SWITCH_NAME, SteeringConstants.FR_TICK_OFFSET, 
+                true, true, true);
+        // BL: User reports angle is not right in rotation. Flipping steer/encoder to match FL logic
         bl = createModule(hardwareMap, "bl",
                 SteeringConstants.BL_ENCODER_NAME, SteeringConstants.BL_ENCODER_SHARED,
-                SteeringConstants.BL_SWITCH_NAME, SteeringConstants.BL_TICK_OFFSET, true, true);
+                SteeringConstants.BL_SWITCH_NAME, SteeringConstants.BL_TICK_OFFSET, 
+                false, false, false);
         br = createModule(hardwareMap, "br",
                 SteeringConstants.BR_ENCODER_NAME, SteeringConstants.BR_ENCODER_SHARED,
-                SteeringConstants.BR_SWITCH_NAME, SteeringConstants.BR_TICK_OFFSET, true, true);
+                SteeringConstants.BR_SWITCH_NAME, SteeringConstants.BR_TICK_OFFSET, 
+                true, true, true);
 
         // FTCLib kinematics: +x = forward, +y = left
         double halfWB = DriveConstants.WHEELBASE_METERS / 2.0;
@@ -52,13 +59,13 @@ public class SwerveDrive {
             String switchName,
             int tickOffset,
             boolean driveInverted,
+            boolean encoderInverted,
             boolean steerInverted
     ) {
         RevThroughBoreEncoder encoder = new RevThroughBoreEncoder(
                 hardwareMap.get(DcMotorEx.class, encoderName), encoderShared
         );
-        // Encoder direction must match servo direction for stable PD control
-        encoder.setInverted(steerInverted);
+        encoder.setInverted(encoderInverted);
 
         return new SwerveModule(
                 hardwareMap.get(DcMotorEx.class, name),
@@ -114,7 +121,7 @@ public class SwerveDrive {
 
 
     public void drive(double fwd, double str, double rot) {
-        SwerveModule[] modules = {fl, fr, bl, br};
+        SwerveModule[] modules = {br, bl, fr, fl};
 
         if (Math.abs(fwd) < 0.01 && Math.abs(str) < 0.01 && Math.abs(rot) < 0.01) {
             for (SwerveModule m : modules) m.setTarget(m.getTargetAngle(), 0);

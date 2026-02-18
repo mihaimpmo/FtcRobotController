@@ -10,5 +10,7 @@ public class IntakeHardware {
     public IntakeHardware(HardwareMap hardwareMap) {
         IntakeMotor = hardwareMap.get(DcMotor.class, intakeMotorName);
         IntakeMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        // RUN_WITHOUT_ENCODER: encoder pins on this port are used by FL swerve steering encoder
+        IntakeMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
     }
 }
