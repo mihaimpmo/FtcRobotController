@@ -13,7 +13,8 @@ public class OuttakeConstants {
     public static  double MAX_MOTOR_RPM = 6000.0;
     public static  double MOTOR_TICKS_PER_REV = 28.0;
 
-    public static  double TARGET_RPM = 5000;
+    public static double TARGET_RPM = 4500;
+    public static double DEFAULT_TO_MAX = 500;
 
     public static  double VELOCITY_P = 0.0002;
     public static  double VELOCITY_I = 0.00001;
