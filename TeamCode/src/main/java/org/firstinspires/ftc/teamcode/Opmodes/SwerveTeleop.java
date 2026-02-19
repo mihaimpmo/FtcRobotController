@@ -50,7 +50,8 @@ public class SwerveTeleop extends LinearOpMode {
             lastLoopTime = currentTime;
 
             if (gamepad2.cross) {
-                if(gamepad2.left_bumper) outtake.setTargetRPM(OuttakeConstants.TARGET_RPM + 250);
+                if(gamepad2.right_bumper) outtake.setTargetRPM(OuttakeConstants.TARGET_RPM + OuttakeConstants.DEFAULT_TO_MAX);
+                else if(gamepad2.left_bumper) outtake.setTargetRPM(OuttakeConstants.TARGET_RPM);
                 else outtake.setTargetRPM(OuttakeConstants.TARGET_RPM);
             } else {
                 outtake.setTargetRPM(0);
@@ -60,10 +61,15 @@ public class SwerveTeleop extends LinearOpMode {
 
             if (gamepad2.square) {
                 intake.Start(0.9);
-            } else {
+            } else if(!gamepad2.square&&!gamepad2.circle) {
                 intake.Stop();
             }
 
+            else if(gamepad2.circle) {
+                intake.Start(-0.9);
+            } else {
+                intake.Stop();
+            }
             double forward = gamepad1.left_stick_y;
             double strafe = gamepad1.left_stick_x;
             double rotation = -gamepad1.right_stick_x;
