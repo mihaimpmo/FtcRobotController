@@ -1,8 +1,9 @@
 package org.firstinspires.ftc.teamcode.Constants;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.bylazar.configurables.annotations.Configurable;
 
-@Config
+@Configurable
 public class DriveConstants {
     public static double WHEELBASE_METERS = 0.385;
     public static double TRACK_WIDTH_METERS = 0.385;

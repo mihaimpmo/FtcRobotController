@@ -1,8 +1,9 @@
 package org.firstinspires.ftc.teamcode.Constants;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.bylazar.configurables.annotations.Configurable;
 
-@Config
+@Configurable
 public class SteeringConstants {
     public static final double SERVO_TO_WHEEL_RATIO = 2.0;
 
@@ -29,8 +30,8 @@ public class SteeringConstants {
     // Set these by running the SwerveCalibration opmode
     public static int FL_TICK_OFFSET = 2501;
     public static int FR_TICK_OFFSET = -306;
-    public static int BL_TICK_OFFSET = 257;
-    public static int BR_TICK_OFFSET = 2879;
+    public static int BL_TICK_OFFSET = 320;
+    public static int BR_TICK_OFFSET = 2100;
 
     // Limit switch hardware map names
     public static final String FL_SWITCH_NAME = "flSwitch";

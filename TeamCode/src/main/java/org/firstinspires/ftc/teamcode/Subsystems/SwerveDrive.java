@@ -120,6 +120,10 @@ public class SwerveDrive {
     }
 
 
+    public SwerveDriveKinematics getKinematics() {
+        return kinematics;
+    }
+
     public void drive(double fwd, double str, double rot) {
         SwerveModule[] modules = {br, bl, fr, fl};
 
