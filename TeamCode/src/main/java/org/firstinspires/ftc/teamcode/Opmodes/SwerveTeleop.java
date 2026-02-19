@@ -9,6 +9,7 @@ import org.firstinspires.ftc.teamcode.Hardware.Hardware;
 import org.firstinspires.ftc.teamcode.Subsystems.Intake;
 import org.firstinspires.ftc.teamcode.Subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.Subsystems.SwerveDrive;
+import org.firstinspires.ftc.teamcode.Utils.ToggleButton;
 
 @TeleOp(name = "Swerve Teleop", group = "Drive")
 public class SwerveTeleop extends LinearOpMode {
@@ -16,6 +17,11 @@ public class SwerveTeleop extends LinearOpMode {
     private SwerveDrive drive;
     private Outtake outtake;
     private Intake intake;
+
+    private final ToggleButton outtakeToggle = new ToggleButton();
+    private boolean outtakeFast = false;
+    private boolean lastRightBumper = false;
+    private boolean lastLeftBumper = false;
 
     @Override
     public void runOpMode() {
@@ -30,7 +36,6 @@ public class SwerveTeleop extends LinearOpMode {
 
         waitForStart();
 
-        // Home all modules (finds limit switches, sets encoder zeros via calibrated offsets)
         telemetry.addLine("Homing swerve modules...");
         telemetry.update();
 
@@ -42,17 +47,24 @@ public class SwerveTeleop extends LinearOpMode {
             sleep(2000);
         }
 
-        // Drive loop — after homing, encoders know absolute position, no reset needed
         long lastLoopTime = System.nanoTime();
         while (opModeIsActive()) {
             long currentTime = System.nanoTime();
             double loopTimeMs = (currentTime - lastLoopTime) / 1e6;
             lastLoopTime = currentTime;
 
-            if (gamepad2.cross) {
-                if(gamepad2.right_bumper) outtake.setTargetRPM(OuttakeConstants.TARGET_RPM + OuttakeConstants.DEFAULT_TO_MAX);
-                else if(gamepad2.left_bumper) outtake.setTargetRPM(OuttakeConstants.TARGET_RPM);
-                else outtake.setTargetRPM(OuttakeConstants.TARGET_RPM);
+            outtakeToggle.update(gamepad2.cross);
+
+            if (gamepad2.right_bumper && !lastRightBumper) outtakeFast = true;
+            if (gamepad2.left_bumper && !lastLeftBumper) outtakeFast = false;
+            lastRightBumper = gamepad2.right_bumper;
+            lastLeftBumper = gamepad2.left_bumper;
+
+            if (outtakeToggle.isToggled()) {
+                double rpm = outtakeFast
+                        ? OuttakeConstants.TARGET_RPM + OuttakeConstants.DEFAULT_TO_MAX
+                        : OuttakeConstants.TARGET_RPM;
+                outtake.setTargetRPM(rpm);
             } else {
                 outtake.setTargetRPM(0);
             }
