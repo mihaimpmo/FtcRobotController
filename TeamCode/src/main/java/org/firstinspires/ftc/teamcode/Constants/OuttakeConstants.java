@@ -6,8 +6,8 @@ import com.bylazar.configurables.annotations.Configurable;
 @Configurable
 public class OuttakeConstants {
     public static double RAMP_MAX = 355;
-    public static  double RAMP_MIN = 0;
-    public static  double RAMP_IDLE = 50;
+    public static  double RAMP_MIN = 50;
+    public static  double RAMP_IDLE = 70;
     public static double RAMP_SHOOT = 100;
 
     public static  double MAX_MOTOR_RPM = 6000.0;
