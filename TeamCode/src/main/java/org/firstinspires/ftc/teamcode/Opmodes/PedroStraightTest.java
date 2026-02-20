@@ -12,17 +12,10 @@ import org.firstinspires.ftc.teamcode.Pedro.SwerveDrivetrain;
 import org.firstinspires.ftc.teamcode.Pedro.SwerveFollowerConstants;
 import org.firstinspires.ftc.teamcode.Pedro.SwervePinpointConstants;
 
-/**
- * Tuning OpMode: drives the robot 24 inches forward in a straight line.
- *
- * Use this to verify:
- * - Pinpoint reads correct X/Y/heading when pushed by hand
- * - Robot drives forward (not sideways) — if wrong, toggle FLIP_X / FLIP_Y in SwerveDrivetrain
- * - Robot stops within ~1 inch of target
- * - Drive/translational/heading PIDF values
- */
-@Autonomous(name = "Pedro Straight Test", group = "Test")
+@Autonomous(name = "Pedro Back-and-Forth", group = "Test")
 public class PedroStraightTest extends LinearOpMode {
+
+    private enum State { HOMING, GO_FORWARD, GO_BACK, DONE }
 
     @Override
     public void runOpMode() {
@@ -33,56 +26,62 @@ public class PedroStraightTest extends LinearOpMode {
                 .pinpointLocalizer(SwervePinpointConstants.localizerConstants)
                 .build();
 
-        Pose startPose = new Pose(0, 0, 0);
-        Pose endPose = new Pose(24, 0, 0);
+        Pose start = new Pose(0, 0, 0);
+        Pose forward = new Pose(24, 0, 0);
 
-        follower.setStartingPose(startPose);
+        follower.setStartingPose(start);
 
-        PathChain straightPath = follower.pathBuilder()
-                .addPath(new BezierLine(startPose, endPose))
+        PathChain goForward = follower.pathBuilder()
+                .addPath(new BezierLine(start, forward))
                 .setConstantHeadingInterpolation(0)
                 .build();
 
-        telemetry.addLine("Pedro Straight Test Ready");
-        telemetry.addLine("Press START to home modules, then drive 24in forward");
+        PathChain goBack = follower.pathBuilder()
+                .addPath(new BezierLine(forward, start))
+                .setConstantHeadingInterpolation(0)
+                .build();
+
+        telemetry.addLine("Back-and-Forth Test - Press START");
         telemetry.update();
 
         waitForStart();
 
-        // Home swerve modules
-        telemetry.addLine("Homing modules...");
-        telemetry.update();
-        boolean homed = drivetrain.getSwerveDrive().homeAllModules(this);
-        if (!homed) {
-            telemetry.addLine("WARNING: Homing failed!");
-            telemetry.update();
-            sleep(2000);
-        }
+        State state = State.HOMING;
 
-        // Follow the straight path
-        follower.followPath(straightPath, true);
-
-        while (opModeIsActive() && follower.isBusy()) {
-            follower.update();
-
-            Pose pose = follower.getPose();
-            telemetry.addData("X", "%.2f in", pose.getX());
-            telemetry.addData("Y", "%.2f in", pose.getY());
-            telemetry.addData("Heading", "%.2f deg", Math.toDegrees(pose.getHeading()));
-            telemetry.addData("Busy", follower.isBusy());
-            drivetrain.getSwerveDrive().log(telemetry);
-            telemetry.update();
-        }
-
-        // Hold end position
-        telemetry.addLine("--- Path Complete ---");
         while (opModeIsActive()) {
+            switch (state) {
+                case HOMING:
+                    telemetry.addLine("Homing...");
+                    telemetry.update();
+                    drivetrain.getSwerveDrive().homeAllModules(this);
+                    follower.followPath(goForward, true);
+                    state = State.GO_FORWARD;
+                    break;
+
+                case GO_FORWARD:
+                    if (!follower.isBusy()) {
+                        follower.followPath(goBack, true);
+                        state = State.GO_BACK;
+                    }
+                    break;
+
+                case GO_BACK:
+                    if (!follower.isBusy()) {
+                        state = State.DONE;
+                    }
+                    break;
+
+                case DONE:
+                    break;
+            }
+
             follower.update();
+
             Pose pose = follower.getPose();
-            telemetry.addData("Final X", "%.2f in", pose.getX());
-            telemetry.addData("Final Y", "%.2f in", pose.getY());
-            telemetry.addData("Final Heading", "%.2f deg", Math.toDegrees(pose.getHeading()));
-            drivetrain.getSwerveDrive().log(telemetry);
+            telemetry.addData("State", state);
+            telemetry.addData("Pose", "X=%.2f Y=%.2f H=%.1f°", pose.getX(), pose.getY(), Math.toDegrees(pose.getHeading()));
+            telemetry.addData("Busy", follower.isBusy());
+            drivetrain.logDebug(telemetry);
             telemetry.update();
         }
     }

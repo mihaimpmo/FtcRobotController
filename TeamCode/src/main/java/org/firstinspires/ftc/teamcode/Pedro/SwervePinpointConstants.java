@@ -9,8 +9,8 @@ public class SwervePinpointConstants {
             .hardwareMapName("pinpoint")
             .distanceUnit(DistanceUnit.INCH)
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
-            .forwardPodY(0.0)   // TODO: measure from robot center in inches
-            .strafePodX(0.0)    // TODO: measure from robot center in inches
+            .forwardPodY(6.64)
+            .strafePodX(6.34)
             .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD);
 }

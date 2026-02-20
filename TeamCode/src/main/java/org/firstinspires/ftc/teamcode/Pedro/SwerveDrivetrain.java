@@ -9,15 +9,9 @@ import com.pedropathing.math.Vector;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
+import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Subsystems.SwerveDrive;
 
-/**
- * Bridges Pedro Pathing's vector-based path follower to our FTCLib swerve kinematics.
- *
- * Pedro calls calculateDrive() with three field-relative Vectors (corrective, heading, pathing)
- * plus the robot heading. We combine them into a ChassisSpeeds, run FTCLib inverse kinematics,
- * and encode the result as double[8] for runDrive() to apply to modules.
- */
 @Configurable
 public class SwerveDrivetrain extends Drivetrain {
 
@@ -25,17 +19,16 @@ public class SwerveDrivetrain extends Drivetrain {
     private final SwerveDriveKinematics kinematics;
     private final VoltageSensor voltageSensor;
 
-    // Tunable axis flips — toggle if robot drives sideways or backwards
-    public static boolean FLIP_X = false;
-    public static boolean FLIP_Y = false;
-
-    // Tunable max velocities (in/s) — measure empirically with Pinpoint at full power
     public static double X_VELOCITY = 50.0;
     public static double Y_VELOCITY = 50.0;
 
-    // Internal state for velocity reporting
     private double currentXVelocity = X_VELOCITY;
     private double currentYVelocity = Y_VELOCITY;
+
+    // Debug values from last calculateDrive call
+    public double dbgPathX, dbgPathY, dbgCorrX, dbgCorrY, dbgHeadX, dbgHeadY;
+    public double dbgFieldTx, dbgFieldTy, dbgRobotX, dbgRobotY, dbgOmega;
+    public double dbgVx, dbgVy;
 
     public SwerveDrivetrain(HardwareMap hardwareMap) {
         this.swerveDrive = new SwerveDrive(hardwareMap);
@@ -74,22 +67,23 @@ public class SwerveDrivetrain extends Drivetrain {
         // Cross product: forward x heading = forwardX*headY - forwardY*headX
         double omega = forwardX * headY - forwardY * headX;
 
-        // Combine translation: corrective + pathing (both field-relative)
         double fieldTx = corrective.getXComponent() + pathing.getXComponent();
         double fieldTy = corrective.getYComponent() + pathing.getYComponent();
 
-        // Field-to-robot rotation by -robotHeading
         double cos = Math.cos(-robotHeading);
         double sin = Math.sin(-robotHeading);
         double robotX = fieldTx * cos - fieldTy * sin;
         double robotY = fieldTx * sin + fieldTy * cos;
 
-        // Apply axis flips for tuning
-        if (FLIP_X) robotX = -robotX;
-        if (FLIP_Y) robotY = -robotY;
+        dbgPathX = pathing.getXComponent(); dbgPathY = pathing.getYComponent();
+        dbgCorrX = corrective.getXComponent(); dbgCorrY = corrective.getYComponent();
+        dbgHeadX = heading.getXComponent(); dbgHeadY = heading.getYComponent();
+        dbgFieldTx = fieldTx; dbgFieldTy = fieldTy;
+        dbgRobotX = robotX; dbgRobotY = robotY;
+        dbgOmega = omega;
+        dbgVx = -robotX; dbgVy = -robotY;
 
-        // FTCLib convention: vx = forward (+x), vy = left (+y), omega = CCW positive
-        ChassisSpeeds speeds = new ChassisSpeeds(robotX, robotY, omega);
+        ChassisSpeeds speeds = new ChassisSpeeds(-robotX, -robotY, omega);
         SwerveModuleState[] states = kinematics.toSwerveModuleStates(speeds);
         SwerveDriveKinematics.normalizeWheelSpeeds(states, 1.0);
 
@@ -164,10 +158,19 @@ public class SwerveDrivetrain extends Drivetrain {
         return voltageSensor.getVoltage();
     }
 
+    public void logDebug(Telemetry telemetry) {
+        telemetry.addData("Pedro Path", "X=%.3f Y=%.3f", dbgPathX, dbgPathY);
+        telemetry.addData("Pedro Corr", "X=%.3f Y=%.3f", dbgCorrX, dbgCorrY);
+        telemetry.addData("Pedro Head", "X=%.3f Y=%.3f", dbgHeadX, dbgHeadY);
+        telemetry.addData("Field T", "X=%.3f Y=%.3f", dbgFieldTx, dbgFieldTy);
+        telemetry.addData("Robot T", "X=%.3f Y=%.3f", dbgRobotX, dbgRobotY);
+        telemetry.addData("ChassisSpeeds", "vx=%.3f vy=%.3f omega=%.3f", dbgVx, dbgVy, dbgOmega);
+    }
+
     @Override
     public String debugString() {
-        return String.format("SwerveDrivetrain | vx=%.1f vy=%.1f flipX=%b flipY=%b voltage=%.1f",
-                currentXVelocity, currentYVelocity, FLIP_X, FLIP_Y, getVoltage());
+        return String.format("SwerveDrivetrain | vx=%.1f vy=%.1f voltage=%.1f",
+                currentXVelocity, currentYVelocity, getVoltage());
     }
 
     /**

@@ -28,7 +28,7 @@ public class SwerveDrive {
                 false, true, false); 
         fr = createModule(hardwareMap, "fr",
                 SteeringConstants.FR_ENCODER_NAME, SteeringConstants.FR_ENCODER_SHARED,
-                SteeringConstants.FR_SWITCH_NAME, SteeringConstants.FR_TICK_OFFSET, 
+                SteeringConstants.FR_SWITCH_NAME, SteeringConstants.FR_TICK_OFFSET,
                 true, true, true);
         // BL: User reports angle is not right in rotation. Flipping steer/encoder to match FL logic
         bl = createModule(hardwareMap, "bl",
@@ -125,7 +125,7 @@ public class SwerveDrive {
     }
 
     public void drive(double fwd, double str, double rot) {
-        SwerveModule[] modules = {br, bl, fr, fl};
+        SwerveModule[] modules = {fl, fr, bl, br};
 
         if (Math.abs(fwd) < 0.01 && Math.abs(str) < 0.01 && Math.abs(rot) < 0.01) {
             for (SwerveModule m : modules) m.setTarget(m.getTargetAngle(), 0);
