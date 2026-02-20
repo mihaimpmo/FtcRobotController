@@ -29,7 +29,7 @@ public class SimpleAuto extends LinearOpMode {
         Outtake outtake = new Outtake(hardware);
 
         GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-        pinpoint.setOffsets(6.64, 6.34, DistanceUnit.INCH);
+        pinpoint.setOffsets(6.34, 6.64, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         pinpoint.setEncoderDirections(
                 GoBildaPinpointDriver.EncoderDirection.FORWARD,
@@ -48,7 +48,10 @@ public class SimpleAuto extends LinearOpMode {
         telemetry.addLine("Homing...");
         telemetry.update();
         if (!drive.homeAllModules(this)) return;
+        pinpoint.recalibrateIMU();
+        sleep(500);
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
+        pinpoint.update();
 
         // Drive forward
         auto.forward(FORWARD_INCHES);

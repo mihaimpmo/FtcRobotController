@@ -39,7 +39,7 @@ public class OdometryTest extends LinearOpMode {
             follower.update();
 
             if (gamepad1.a) {
-                follower.setPose(new Pose(0, 0, 0));
+            follower.setPose(new Pose(0, 0, 0));
             }
 
             Pose pose = follower.getPose();

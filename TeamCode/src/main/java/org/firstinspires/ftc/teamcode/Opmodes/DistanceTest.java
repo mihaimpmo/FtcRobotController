@@ -21,7 +21,7 @@ public class DistanceTest extends LinearOpMode {
         SwerveDrive drive = new SwerveDrive(hardwareMap);
 
         GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-        pinpoint.setOffsets(6.64, 6.34, DistanceUnit.INCH);
+        pinpoint.setOffsets(6.34, 6.64, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         pinpoint.setEncoderDirections(
                 GoBildaPinpointDriver.EncoderDirection.FORWARD,
@@ -44,6 +44,10 @@ public class DistanceTest extends LinearOpMode {
             telemetry.update();
             sleep(2000);
         }
+
+        // Recalibrate IMU after homing (vibrations from servos bias the gyro)
+        pinpoint.recalibrateIMU();
+        sleep(500);
 
         // Reset pose after homing
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
@@ -93,12 +97,12 @@ public class DistanceTest extends LinearOpMode {
             double displacement = Math.sqrt(poseX * poseX + poseY * poseY);
 
             telemetry.addLine("=== DISTANCE TEST ===");
-            telemetry.addData("Pinpoint X (strafe)", "%.2f in", poseX);
-            telemetry.addData("Pinpoint Y (forward)", "%.2f in", poseY);
+            telemetry.addData("Pinpoint X (forward)", "%.2f in", poseX);
+            telemetry.addData("Pinpoint Y (strafe)", "%.2f in", poseY);
             telemetry.addData("Heading", "%.1f° (hold %.1f°)", heading, holdHeading);
             telemetry.addLine("---");
-            telemetry.addData("Forward dist", "%.2f in", poseY);
-            telemetry.addData("Strafe dist", "%.2f in", poseX);
+            telemetry.addData("Forward dist", "%.2f in", poseX);
+            telemetry.addData("Strafe dist", "%.2f in", poseY);
             telemetry.addData("Total displacement", "%.2f in", displacement);
             telemetry.addLine("---");
             telemetry.addData("Controls", "LStick=drive | RStickX=adjust heading | A=reset");

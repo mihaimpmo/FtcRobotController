@@ -11,9 +11,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 /**
  * Dead-simple auto drive. Blocking methods — call forward(24) and it goes 24 inches.
  *
- * Axis mapping (verified with SignTest):
- *   Forward distance = Pinpoint Y
- *   Strafe distance  = Pinpoint X
+ * Axis mapping (pods swapped to correct heading):
+ *   Forward distance = Pinpoint X
+ *   Strafe distance  = Pinpoint Y
  *   drive(negative, 0, 0) = physical forward
  *   drive(0, 0, positive) = physical CW
  */
@@ -33,9 +33,16 @@ public class AutoDrive {
     // Settle: wait this long after stopping to let momentum die
     public static long SETTLE_MS = 200;
 
+    // EMA filter on position only (not heading — heading needs instant response for P control)
+    // 0.0 = full smoothing, 1.0 = no filter
+    public static double EMA_ALPHA = 0.4;
+
     private final SwerveDrive drive;
     private final GoBildaPinpointDriver pinpoint;
     private final LinearOpMode opMode;
+
+    private double filteredX = Double.NaN;
+    private double filteredY = Double.NaN;
 
     public AutoDrive(SwerveDrive drive, GoBildaPinpointDriver pinpoint, LinearOpMode opMode) {
         this.drive = drive;
@@ -43,10 +50,29 @@ public class AutoDrive {
         this.opMode = opMode;
     }
 
-    /** Read pose once — call this instead of multiple getForward/getStrafe/getHeading. */
+    /** Read pose with EMA filtering on position only. Heading is raw for responsive correction. */
     private Pose2D readPose() {
         pinpoint.update();
-        return pinpoint.getPosition();
+        Pose2D raw = pinpoint.getPosition();
+        double rawX = raw.getX(DistanceUnit.INCH);
+        double rawY = raw.getY(DistanceUnit.INCH);
+
+        if (Double.isNaN(filteredX)) {
+            filteredX = rawX;
+            filteredY = rawY;
+        } else {
+            filteredX = EMA_ALPHA * rawX + (1 - EMA_ALPHA) * filteredX;
+            filteredY = EMA_ALPHA * rawY + (1 - EMA_ALPHA) * filteredY;
+        }
+
+        return new Pose2D(DistanceUnit.INCH, filteredX, filteredY,
+                AngleUnit.DEGREES, raw.getHeading(AngleUnit.DEGREES));
+    }
+
+    /** Reset EMA filter (call after resetting pinpoint pose). */
+    public void resetFilter() {
+        filteredX = Double.NaN;
+        filteredY = Double.NaN;
     }
 
     /**
@@ -71,16 +97,16 @@ public class AutoDrive {
      */
     public void forward(double inches) {
         Pose2D pose = readPose();
-        double startPos = pose.getY(DistanceUnit.INCH);
+        double startPos = pose.getX(DistanceUnit.INCH);
         double targetPos = startPos + inches;
         double holdHeading = pose.getHeading(AngleUnit.DEGREES);
-        double holdX = pose.getX(DistanceUnit.INCH);
+        double holdY = pose.getY(DistanceUnit.INCH);
 
         while (opMode.opModeIsActive()) {
             pose = readPose();
-            double current = pose.getY(DistanceUnit.INCH);
+            double current = pose.getX(DistanceUnit.INCH);
             double heading = pose.getHeading(AngleUnit.DEGREES);
-            double currentX = pose.getX(DistanceUnit.INCH);
+            double currentY = pose.getY(DistanceUnit.INCH);
 
             double remaining = targetPos - current;
 
@@ -95,9 +121,9 @@ public class AutoDrive {
             double headingError = normalizeAngle(holdHeading - heading);
             double headingCorrection = -(HEADING_CORRECTION_P * headingError);
 
-            // Cross-axis correction: hold X constant
-            double xDrift = holdX - currentX;
-            double strafeCorrection = CROSS_AXIS_P * xDrift;
+            // Cross-axis correction: hold Y (strafe) constant
+            double yDrift = holdY - currentY;
+            double strafeCorrection = CROSS_AXIS_P * yDrift;
 
             // drive(negative) = forward
             drive.drive(-power, strafeCorrection, headingCorrection);
@@ -106,7 +132,7 @@ public class AutoDrive {
             opMode.telemetry.addData("Forward", "%.1f / %.1f in (rem %.1f)", current - startPos, inches, remaining);
             opMode.telemetry.addData("Power", "%.2f", power);
             opMode.telemetry.addData("Heading", "%.1f° (hold %.1f°)", heading, holdHeading);
-            opMode.telemetry.addData("X drift", "%.2f in", currentX - holdX);
+            opMode.telemetry.addData("Y drift", "%.2f in", currentY - holdY);
             opMode.telemetry.update();
         }
 
@@ -119,16 +145,16 @@ public class AutoDrive {
      */
     public void strafe(double inches) {
         Pose2D pose = readPose();
-        double startPos = pose.getX(DistanceUnit.INCH);
+        double startPos = pose.getY(DistanceUnit.INCH);
         double targetPos = startPos + inches;
         double holdHeading = pose.getHeading(AngleUnit.DEGREES);
-        double holdY = pose.getY(DistanceUnit.INCH);
+        double holdX = pose.getX(DistanceUnit.INCH);
 
         while (opMode.opModeIsActive()) {
             pose = readPose();
-            double current = pose.getX(DistanceUnit.INCH);
+            double current = pose.getY(DistanceUnit.INCH);
             double heading = pose.getHeading(AngleUnit.DEGREES);
-            double currentY = pose.getY(DistanceUnit.INCH);
+            double currentX = pose.getX(DistanceUnit.INCH);
 
             double remaining = targetPos - current;
 
@@ -140,9 +166,9 @@ public class AutoDrive {
             double headingError = normalizeAngle(holdHeading - heading);
             double headingCorrection = -(HEADING_CORRECTION_P * headingError);
 
-            // Cross-axis correction: hold Y constant
-            double yDrift = holdY - currentY;
-            double fwdCorrection = -(CROSS_AXIS_P * yDrift); // negative because drive(negative) = forward
+            // Cross-axis correction: hold X (forward) constant
+            double xDrift = holdX - currentX;
+            double fwdCorrection = -(CROSS_AXIS_P * xDrift); // negative because drive(negative) = forward
 
             drive.drive(fwdCorrection, power, headingCorrection);
             drive.update();
@@ -150,7 +176,7 @@ public class AutoDrive {
             opMode.telemetry.addData("Strafe", "%.1f / %.1f in (rem %.1f)", current - startPos, inches, remaining);
             opMode.telemetry.addData("Power", "%.2f", power);
             opMode.telemetry.addData("Heading", "%.1f° (hold %.1f°)", heading, holdHeading);
-            opMode.telemetry.addData("Y drift", "%.2f in", currentY - holdY);
+            opMode.telemetry.addData("X drift", "%.2f in", currentX - holdX);
             opMode.telemetry.update();
         }
 
