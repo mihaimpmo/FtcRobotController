@@ -22,8 +22,8 @@ public class AutoDrive {
 
     public static double DRIVE_POWER = 0.8;
     public static double TURN_POWER = 0.8;
-    public static double HEADING_CORRECTION_P = 0.08;
-    public static double CROSS_AXIS_P = 0.1;
+    public static double HEADING_CORRECTION_P = 0.2;
+    public static double CROSS_AXIS_P = 0.05;
 
     // Deceleration: start ramping down power within this distance of target
     public static double DECEL_DISTANCE = 8.0;    // inches
@@ -33,16 +33,9 @@ public class AutoDrive {
     // Settle: wait this long after stopping to let momentum die
     public static long SETTLE_MS = 200;
 
-    // EMA filter: 0.0 = full smoothing (ignores new data), 1.0 = no filter (raw readings)
-    public static double EMA_ALPHA = 0.3;
-
     private final SwerveDrive drive;
     private final GoBildaPinpointDriver pinpoint;
     private final LinearOpMode opMode;
-
-    private double filteredX = Double.NaN;
-    private double filteredY = Double.NaN;
-    private double filteredHeading = Double.NaN;
 
     public AutoDrive(SwerveDrive drive, GoBildaPinpointDriver pinpoint, LinearOpMode opMode) {
         this.drive = drive;
@@ -50,32 +43,10 @@ public class AutoDrive {
         this.opMode = opMode;
     }
 
-    /** Read pose with EMA filtering applied to all axes. */
+    /** Read pose once — call this instead of multiple getForward/getStrafe/getHeading. */
     private Pose2D readPose() {
         pinpoint.update();
-        Pose2D raw = pinpoint.getPosition();
-        double rawX = raw.getX(DistanceUnit.INCH);
-        double rawY = raw.getY(DistanceUnit.INCH);
-        double rawH = raw.getHeading(AngleUnit.DEGREES);
-
-        if (Double.isNaN(filteredX)) {
-            filteredX = rawX;
-            filteredY = rawY;
-            filteredHeading = rawH;
-        } else {
-            filteredX = EMA_ALPHA * rawX + (1 - EMA_ALPHA) * filteredX;
-            filteredY = EMA_ALPHA * rawY + (1 - EMA_ALPHA) * filteredY;
-            filteredHeading = EMA_ALPHA * rawH + (1 - EMA_ALPHA) * filteredHeading;
-        }
-
-        return new Pose2D(DistanceUnit.INCH, filteredX, filteredY, AngleUnit.DEGREES, filteredHeading);
-    }
-
-    /** Reset the EMA filter (call after resetting pinpoint pose). */
-    public void resetFilter() {
-        filteredX = Double.NaN;
-        filteredY = Double.NaN;
-        filteredHeading = Double.NaN;
+        return pinpoint.getPosition();
     }
 
     /**

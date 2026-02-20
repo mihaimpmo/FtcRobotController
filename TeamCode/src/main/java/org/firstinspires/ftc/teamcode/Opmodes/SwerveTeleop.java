@@ -84,7 +84,7 @@ public class SwerveTeleop extends LinearOpMode {
             }
             double forward = gamepad1.left_stick_y;
             double strafe = gamepad1.left_stick_x;
-            double rotation = -gamepad1.right_stick_x;
+            double rotation = gamepad1.right_stick_x;
 
             if (Math.abs(forward) < ControlConstants.DEADBAND) forward = 0;
             if (Math.abs(strafe) < ControlConstants.DEADBAND) strafe = 0;
