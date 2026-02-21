@@ -28,7 +28,6 @@ public class Outtake {
 
         ramp = new ServoCfg(hardware.outtakeHardware.RampServo, 2);
         ramp.setRange(OuttakeConstants.RAMP_MIN, OuttakeConstants.RAMP_MAX);
-        ramp.moveTo(OuttakeConstants.RAMP_IDLE);
     }
 
     public void setTargetRPM(double rpm) {

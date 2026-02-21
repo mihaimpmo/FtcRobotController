@@ -20,8 +20,6 @@ public class SwerveDrive {
     private final SwerveDriveKinematics kinematics;
 
     public SwerveDrive(HardwareMap hardwareMap) {
-        // FL: Fixing oscillation by decoupling (Encoder=true, Steer=false)
-        // Left side (FL, BL) drive power flipped based on user feedback
         fl = createModule(hardwareMap, "fl",
                 SteeringConstants.FL_ENCODER_NAME, SteeringConstants.FL_ENCODER_SHARED,
                 SteeringConstants.FL_SWITCH_NAME, SteeringConstants.FL_TICK_OFFSET, 
@@ -30,7 +28,6 @@ public class SwerveDrive {
                 SteeringConstants.FR_ENCODER_NAME, SteeringConstants.FR_ENCODER_SHARED,
                 SteeringConstants.FR_SWITCH_NAME, SteeringConstants.FR_TICK_OFFSET,
                 true, true, true);
-        // BL: User reports angle is not right in rotation. Flipping steer/encoder to match FL logic
         bl = createModule(hardwareMap, "bl",
                 SteeringConstants.BL_ENCODER_NAME, SteeringConstants.BL_ENCODER_SHARED,
                 SteeringConstants.BL_SWITCH_NAME, SteeringConstants.BL_TICK_OFFSET, 

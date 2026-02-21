@@ -36,6 +36,9 @@ public class SwerveTeleop extends LinearOpMode {
 
         waitForStart();
 
+        outtake.resetRamp();
+        outtake.update();
+
         telemetry.addLine("Homing swerve modules...");
         telemetry.update();
 

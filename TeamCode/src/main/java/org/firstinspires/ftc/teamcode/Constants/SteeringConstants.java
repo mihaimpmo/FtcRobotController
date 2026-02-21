@@ -50,7 +50,6 @@ public class SteeringConstants {
 
     // Steering PD
     public static double STEER_P = 0.8;
-    public static double STEER_I = 0.0;
     public static double STEER_D = 0.03;
 
     public static double STEERING_DEADBAND_RADIANS = 0.01;
