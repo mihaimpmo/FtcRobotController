@@ -29,7 +29,7 @@ public class SimpleAuto extends LinearOpMode {
         Outtake outtake = new Outtake(hardware);
 
         GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "pinpoint");
-        pinpoint.setOffsets(6.34, 6.64, DistanceUnit.INCH);
+        pinpoint.setOffsets(6.64, 6.34, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
         pinpoint.setEncoderDirections(
                 GoBildaPinpointDriver.EncoderDirection.FORWARD,

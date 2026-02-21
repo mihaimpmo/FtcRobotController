@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.Opmodes;
 
 import static org.firstinspires.ftc.teamcode.Opmodes.SimpleAuto.SPINUP_MS;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.hardware.gobilda.GoBildaPinpointDriver;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -16,6 +17,7 @@ import org.firstinspires.ftc.teamcode.Subsystems.Intake;
 import org.firstinspires.ftc.teamcode.Subsystems.Outtake;
 import org.firstinspires.ftc.teamcode.Subsystems.SwerveDrive;
 
+@Configurable
 @Autonomous(name = "Swerve Auto", group = "Auto")
 public class ForwardTurnTest extends LinearOpMode {
 
@@ -56,8 +58,7 @@ public class ForwardTurnTest extends LinearOpMode {
         pinpoint.setPosition(new Pose2D(DistanceUnit.INCH, 0, 0, AngleUnit.DEGREES, 0));
         pinpoint.update();
 
-        // Drive forward 84 inches
-        auto.forward(84);
+        auto.forward(24);
         if (!opModeIsActive()) return;
 
         // Rotate 30 degrees

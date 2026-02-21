@@ -8,15 +8,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 
-/**
- * Dead-simple auto drive. Blocking methods — call forward(24) and it goes 24 inches.
- *
- * Axis mapping (pods swapped to correct heading):
- *   Forward distance = Pinpoint X
- *   Strafe distance  = Pinpoint Y
- *   drive(negative, 0, 0) = physical forward
- *   drive(0, 0, positive) = physical CW
- */
+
 @Configurable
 public class AutoDrive {
 
@@ -33,16 +25,9 @@ public class AutoDrive {
     // Settle: wait this long after stopping to let momentum die
     public static long SETTLE_MS = 200;
 
-    // EMA filter on position only (not heading — heading needs instant response for P control)
-    // 0.0 = full smoothing, 1.0 = no filter
-    public static double EMA_ALPHA = 0.4;
-
     private final SwerveDrive drive;
     private final GoBildaPinpointDriver pinpoint;
     private final LinearOpMode opMode;
-
-    private double filteredX = Double.NaN;
-    private double filteredY = Double.NaN;
 
     public AutoDrive(SwerveDrive drive, GoBildaPinpointDriver pinpoint, LinearOpMode opMode) {
         this.drive = drive;
@@ -50,35 +35,17 @@ public class AutoDrive {
         this.opMode = opMode;
     }
 
-    /** Read pose with EMA filtering on position only. Heading is raw for responsive correction. */
     private Pose2D readPose() {
         pinpoint.update();
-        Pose2D raw = pinpoint.getPosition();
-        double rawX = raw.getX(DistanceUnit.INCH);
-        double rawY = raw.getY(DistanceUnit.INCH);
-
-        if (Double.isNaN(filteredX)) {
-            filteredX = rawX;
-            filteredY = rawY;
-        } else {
-            filteredX = EMA_ALPHA * rawX + (1 - EMA_ALPHA) * filteredX;
-            filteredY = EMA_ALPHA * rawY + (1 - EMA_ALPHA) * filteredY;
-        }
-
-        return new Pose2D(DistanceUnit.INCH, filteredX, filteredY,
-                AngleUnit.DEGREES, raw.getHeading(AngleUnit.DEGREES));
+        return pinpoint.getPosition();
     }
 
-    /** Reset EMA filter (call after resetting pinpoint pose). */
+
     public void resetFilter() {
-        filteredX = Double.NaN;
-        filteredY = Double.NaN;
+        // No-op, filter removed
     }
 
-    /**
-     * Compute ramped power: full power far from target, ramps down linearly
-     * within DECEL_DISTANCE, but never below MIN_POWER.
-     */
+
     private double rampedPower(double maxPower, double remaining, double decelZone) {
         double absRemaining = Math.abs(remaining);
         double power;
@@ -91,102 +58,72 @@ public class AutoDrive {
         return power * Math.signum(remaining);
     }
 
-    /**
-     * Drive forward by the given distance in inches. Maintains heading.
-     * Positive = forward, negative = backward.
-     */
     public void forward(double inches) {
         Pose2D pose = readPose();
-        double startPos = pose.getX(DistanceUnit.INCH);
-        double targetPos = startPos + inches;
-        double holdHeading = pose.getHeading(AngleUnit.DEGREES);
-        double holdY = pose.getY(DistanceUnit.INCH);
+        double startX = pose.getX(DistanceUnit.INCH);
+        double startY = pose.getY(DistanceUnit.INCH);
+        double targetX = startX + inches;
 
         while (opMode.opModeIsActive()) {
             pose = readPose();
-            double current = pose.getX(DistanceUnit.INCH);
-            double heading = pose.getHeading(AngleUnit.DEGREES);
+            double currentX = pose.getX(DistanceUnit.INCH);
             double currentY = pose.getY(DistanceUnit.INCH);
 
-            double remaining = targetPos - current;
-
-            // Check if we've passed the target
+            double remaining = targetX - currentX;
             if (inches >= 0 && remaining <= 0) break;
             if (inches < 0 && remaining >= 0) break;
 
-            // Ramped power: slows down near target
+            // Master: Forward power (-power for forward progress)
             double power = rampedPower(DRIVE_POWER, remaining, DECEL_DISTANCE);
 
-            // Heading correction
-            double headingError = normalizeAngle(holdHeading - heading);
-            double headingCorrection = -(HEADING_CORRECTION_P * headingError);
-
-            // Cross-axis correction: hold Y (strafe) constant
-            double yDrift = holdY - currentY;
+            // Lock: Lateral. If we drift left (currentY > startY), move right (+strafe).
+            double yDrift = currentY - startY;
             double strafeCorrection = CROSS_AXIS_P * yDrift;
 
-            // drive(negative) = forward
-            drive.drive(-power, strafeCorrection, headingCorrection);
+            // drive(fwd, str, rot)
+            drive.drive(-power, strafeCorrection, 0);
             drive.update();
 
-            opMode.telemetry.addData("Forward", "%.1f / %.1f in (rem %.1f)", current - startPos, inches, remaining);
-            opMode.telemetry.addData("Power", "%.2f", power);
-            opMode.telemetry.addData("Heading", "%.1f° (hold %.1f°)", heading, holdHeading);
-            opMode.telemetry.addData("Y drift", "%.2f in", currentY - holdY);
+            opMode.telemetry.addData("Forward", "%.1f / %.1f in", currentX - startX, inches);
+            opMode.telemetry.addData("Lock", "Y-Drift: %.2f", yDrift);
             opMode.telemetry.update();
         }
-
         brakeAndSettle();
     }
 
-    /**
-     * Strafe by the given distance in inches. Maintains heading.
-     * Positive = right, negative = left.
-     */
     public void strafe(double inches) {
         Pose2D pose = readPose();
-        double startPos = pose.getY(DistanceUnit.INCH);
-        double targetPos = startPos + inches;
-        double holdHeading = pose.getHeading(AngleUnit.DEGREES);
-        double holdX = pose.getX(DistanceUnit.INCH);
+        double startX = pose.getX(DistanceUnit.INCH);
+        double startY = pose.getY(DistanceUnit.INCH);
+        double targetY = startY + inches;
 
         while (opMode.opModeIsActive()) {
             pose = readPose();
-            double current = pose.getY(DistanceUnit.INCH);
-            double heading = pose.getHeading(AngleUnit.DEGREES);
             double currentX = pose.getX(DistanceUnit.INCH);
+            double currentY = pose.getY(DistanceUnit.INCH);
 
-            double remaining = targetPos - current;
-
+            double remaining = targetY - currentY;
             if (inches >= 0 && remaining <= 0) break;
             if (inches < 0 && remaining >= 0) break;
 
+            // Master: Strafe power (-power for left progress)
             double power = rampedPower(DRIVE_POWER, remaining, DECEL_DISTANCE);
 
-            double headingError = normalizeAngle(holdHeading - heading);
-            double headingCorrection = -(HEADING_CORRECTION_P * headingError);
+            // Lock: Longitudinal. If we creep forward (currentX > startX), move backward (+fwd).
+            double xDrift = currentX - startX;
+            double fwdCorrection = CROSS_AXIS_P * xDrift;
 
-            // Cross-axis correction: hold X (forward) constant
-            double xDrift = holdX - currentX;
-            double fwdCorrection = -(CROSS_AXIS_P * xDrift); // negative because drive(negative) = forward
-
-            drive.drive(fwdCorrection, power, headingCorrection);
+            // drive(fwd, str, rot)
+            drive.drive(fwdCorrection, -power, 0);
             drive.update();
 
-            opMode.telemetry.addData("Strafe", "%.1f / %.1f in (rem %.1f)", current - startPos, inches, remaining);
-            opMode.telemetry.addData("Power", "%.2f", power);
-            opMode.telemetry.addData("Heading", "%.1f° (hold %.1f°)", heading, holdHeading);
-            opMode.telemetry.addData("X drift", "%.2f in", currentX - holdX);
+            opMode.telemetry.addData("Strafe", "%.1f / %.1f in", currentY - startY, inches);
+            opMode.telemetry.addData("Lock", "X-Drift: %.2f", xDrift);
             opMode.telemetry.update();
         }
-
         brakeAndSettle();
     }
 
-    /**
-     * Turn to an absolute heading in degrees.
-     * Ramps down power near target to avoid overshoot.
-     */
     public void turnTo(double targetHeading) {
         while (opMode.opModeIsActive()) {
             Pose2D pose = readPose();
@@ -195,18 +132,16 @@ public class AutoDrive {
 
             if (Math.abs(error) < 3.0) break;
 
-            // Ramped turn power: full far away, ramps down within DECEL_ANGLE
             double power = rampedPower(TURN_POWER, error, DECEL_ANGLE);
 
-            // error positive = need CCW = need negative rot (drive +rot = CW)
+            // ONLY change the Rotation axis
+            // Inverted rotation command to match user's physical setup
             drive.drive(0, 0, -power);
             drive.update();
 
-            opMode.telemetry.addData("Turn", "%.1f° → %.1f° (err %.1f°)", heading, targetHeading, error);
-            opMode.telemetry.addData("Power", "%.2f", power);
+            opMode.telemetry.addData("Turn", "%.1f° → %.1f°", heading, targetHeading);
             opMode.telemetry.update();
         }
-
         brakeAndSettle();
     }
 
