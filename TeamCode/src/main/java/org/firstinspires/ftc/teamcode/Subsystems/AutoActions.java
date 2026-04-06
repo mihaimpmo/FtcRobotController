@@ -11,9 +11,14 @@ import org.firstinspires.ftc.teamcode.Constants.AutoConstants;
 
 /**
  * Closed-loop autonomous helpers using GoBilda Pinpoint for translational and heading feedback.
- * Public distance inputs are in centimeters and heading inputs are in degrees. Commands are
- * expressed relative to the robot, then converted into field-space targets. During the move,
- * position error is converted back into robot-centric commands for the swerve drive.
+ *
+ * Coordinate assumptions:
+ * - Heading is in degrees, CCW positive.
+ * - At heading 0 deg, robot forward aligns with +X and robot left aligns with +Y.
+ * - drive(fwd, str, rot) expects robot-centric commands:
+ *      fwd = forward, str = left, rot = CCW positive
+ *
+ * Public distance inputs are centimeters and heading inputs are degrees.
  */
 public class AutoActions {
     private final LinearOpMode opMode;
@@ -21,6 +26,7 @@ public class AutoActions {
     private final GoBildaPinpointDriver pinpoint;
     private final ElapsedTime timer = new ElapsedTime();
 
+    // Best-known pose. Updated from localization after each action.
     private Pose2D expectedPose = new Pose2D(DistanceUnit.CM, 0, 0, AngleUnit.DEGREES, 0);
 
     public AutoActions(LinearOpMode opMode, SwerveDrive drive, GoBildaPinpointDriver pinpoint) {
@@ -49,7 +55,13 @@ public class AutoActions {
     }
 
     public void setStartPose(double xCm, double yCm, double headingDegrees) {
-        Pose2D pose = new Pose2D(DistanceUnit.CM, xCm, yCm, AngleUnit.DEGREES, headingDegrees);
+        Pose2D pose = new Pose2D(
+                DistanceUnit.CM,
+                xCm,
+                yCm,
+                AngleUnit.DEGREES,
+                normalizeAngle(headingDegrees)
+        );
         pinpoint.setPosition(pose);
         expectedPose = pose;
     }
@@ -58,41 +70,47 @@ public class AutoActions {
         return readPose();
     }
 
-    public void forward(double centimeters) {
-        moveRelative(centimeters, 0.0);
+    public boolean forward(double centimeters) {
+        return moveRelative(centimeters, 0.0);
     }
 
-    public void backward(double centimeters) {
-        moveRelative(-centimeters, 0.0);
+    public boolean backward(double centimeters) {
+        return moveRelative(-centimeters, 0.0);
     }
 
-    public void strafeLeft(double centimeters) {
-        moveRelative(0.0, centimeters);
+    public boolean strafeLeft(double centimeters) {
+        return moveRelative(0.0, centimeters);
     }
 
-    public void strafeRight(double centimeters) {
-        moveRelative(0.0, -centimeters);
+    public boolean strafeRight(double centimeters) {
+        return moveRelative(0.0, -centimeters);
     }
 
-    public void turnBy(double deltaDegrees) {
-        turnTo(expectedPose.getHeading(AngleUnit.DEGREES) + deltaDegrees);
+    public boolean turnBy(double deltaDegrees) {
+        Pose2D pose = readPose();
+        return turnTo(pose.getHeading(AngleUnit.DEGREES) + deltaDegrees);
     }
 
-    public void turnTo(double targetHeadingDegrees) {
-        double targetX = expectedPose.getX(DistanceUnit.CM);
-        double targetY = expectedPose.getY(DistanceUnit.CM);
-        double normalizedTargetHeading = normalizeAngle(targetHeadingDegrees);
+    public boolean turnTo(double targetHeadingDegrees) {
+        Pose2D startPose = readPose();
+        double holdX = startPose.getX(DistanceUnit.CM);
+        double holdY = startPose.getY(DistanceUnit.CM);
+        double targetHeading = normalizeAngle(targetHeadingDegrees);
 
+        boolean success = false;
         timer.reset();
+
         while (opMode.opModeIsActive() && timer.milliseconds() < AutoConstants.LOOP_TIMEOUT_MS) {
             Pose2D pose = readPose();
-            double headingError = normalizeAngle(normalizedTargetHeading - pose.getHeading(AngleUnit.DEGREES));
+            double headingNow = pose.getHeading(AngleUnit.DEGREES);
+            double headingError = normalizeAngle(targetHeading - headingNow);
 
             if (Math.abs(headingError) <= AutoConstants.HEADING_TOLERANCE_DEG) {
+                success = true;
                 break;
             }
 
-            double rot = scaledPower(
+            double rotCmd = scaledPower(
                     headingError,
                     AutoConstants.TURN_P,
                     AutoConstants.MIN_ROTATION_SPEED,
@@ -100,15 +118,22 @@ public class AutoActions {
                     AutoConstants.DECEL_ANGLE_DEG
             );
 
-            drive.drive(0.0, 0.0, AutoConstants.ROTATION_COMMAND_SIGN * rot);
+            drive.drive(
+                    0.0,
+                    0.0,
+                    AutoConstants.ROTATION_COMMAND_SIGN * rotCmd
+            );
             drive.update();
-            logTurnTelemetry(pose, normalizedTargetHeading, headingError);
+
+            logTurnTelemetry(pose, targetHeading, headingError);
             opMode.idle();
         }
 
         brakeAndSettle();
-        expectedPose = new Pose2D(DistanceUnit.CM, targetX, targetY, AngleUnit.DEGREES, normalizedTargetHeading);
-        logDrift("Turn", targetX, targetY, normalizedTargetHeading);
+        expectedPose = readPose();
+        logDrift("Turn", holdX, holdY, targetHeading);
+
+        return success;
     }
 
     public void stop() {
@@ -119,19 +144,25 @@ public class AutoActions {
     public void pause(long durationMs) {
         stop();
         timer.reset();
+
         while (opMode.opModeIsActive() && timer.milliseconds() < durationMs) {
             pinpoint.update();
             drive.update();
             opMode.idle();
         }
+
+        expectedPose = readPose();
     }
 
-    private void moveRelative(double forwardCm, double strafeLeftCm) {
-        double startX = expectedPose.getX(DistanceUnit.CM);
-        double startY = expectedPose.getY(DistanceUnit.CM);
-        double targetHeading = expectedPose.getHeading(AngleUnit.DEGREES);
+    private boolean moveRelative(double forwardCm, double strafeLeftCm) {
+        Pose2D startPose = readPose();
+
+        double startX = startPose.getX(DistanceUnit.CM);
+        double startY = startPose.getY(DistanceUnit.CM);
+        double targetHeading = normalizeAngle(startPose.getHeading(AngleUnit.DEGREES));
         double headingRad = Math.toRadians(targetHeading);
 
+        // Convert robot-relative requested motion into a field-space target.
         double targetX = startX
                 + (forwardCm * Math.cos(headingRad))
                 - (strafeLeftCm * Math.sin(headingRad));
@@ -139,66 +170,58 @@ public class AutoActions {
                 + (forwardCm * Math.sin(headingRad))
                 + (strafeLeftCm * Math.cos(headingRad));
 
-        boolean forwardPrimary = Math.abs(forwardCm) >= Math.abs(strafeLeftCm);
+        boolean success = false;
         timer.reset();
 
         while (opMode.opModeIsActive() && timer.milliseconds() < AutoConstants.LOOP_TIMEOUT_MS) {
             Pose2D pose = readPose();
-            double headingDeg = pose.getHeading(AngleUnit.DEGREES);
-            double headingNowRad = Math.toRadians(headingDeg);
-            double headingError = normalizeAngle(targetHeading - headingDeg);
 
-            double fieldErrorX = targetX - pose.getX(DistanceUnit.CM);
-            double fieldErrorY = targetY - pose.getY(DistanceUnit.CM);
+            double xNow = pose.getX(DistanceUnit.CM);
+            double yNow = pose.getY(DistanceUnit.CM);
+            double headingNowDeg = pose.getHeading(AngleUnit.DEGREES);
+            double headingNowRad = Math.toRadians(headingNowDeg);
+
+            double fieldErrorX = targetX - xNow;
+            double fieldErrorY = targetY - yNow;
+            double headingError = normalizeAngle(targetHeading - headingNowDeg);
 
             // Convert field-space translation error into robot-space commands.
-            double robotForwardError = fieldErrorX * Math.cos(headingNowRad) + fieldErrorY * Math.sin(headingNowRad);
-            double robotStrafeError = -fieldErrorX * Math.sin(headingNowRad) + fieldErrorY * Math.cos(headingNowRad);
+            double robotForwardError =
+                    fieldErrorX * Math.cos(headingNowRad) + fieldErrorY * Math.sin(headingNowRad);
+            double robotStrafeError =
+                    -fieldErrorX * Math.sin(headingNowRad) + fieldErrorY * Math.cos(headingNowRad);
 
-            double primaryError = forwardPrimary ? robotForwardError : robotStrafeError;
-            double crossAxisError = forwardPrimary ? robotStrafeError : robotForwardError;
-
-            boolean positionDone = Math.abs(primaryError) <= AutoConstants.POSITION_TOLERANCE_CM;
-            boolean crossAxisDone = Math.abs(crossAxisError) <= AutoConstants.CROSS_AXIS_TOLERANCE_CM;
+            boolean forwardDone = Math.abs(robotForwardError) <= AutoConstants.POSITION_TOLERANCE_CM;
+            boolean strafeDone = Math.abs(robotStrafeError) <= AutoConstants.CROSS_AXIS_TOLERANCE_CM;
             boolean headingDone = Math.abs(headingError) <= AutoConstants.HEADING_TOLERANCE_DEG;
-            if (positionDone && crossAxisDone && headingDone) {
+
+            if (forwardDone && strafeDone && headingDone) {
+                success = true;
                 break;
             }
 
-            double fwdCmd;
-            double strCmd;
-            if (forwardPrimary) {
-                fwdCmd = scaledPower(
-                        robotForwardError,
-                        AutoConstants.DRIVE_P,
-                        AutoConstants.MIN_TRANSLATION_SPEED,
-                        AutoConstants.MAX_TRANSLATION_SPEED,
-                        AutoConstants.DECEL_DISTANCE_CM
-                );
-                strCmd = clamp(
-                        robotStrafeError * AutoConstants.CROSS_AXIS_P,
-                        -AutoConstants.MAX_TRANSLATION_SPEED,
-                        AutoConstants.MAX_TRANSLATION_SPEED
-                );
-            } else {
-                strCmd = scaledPower(
-                        robotStrafeError,
-                        AutoConstants.STRAFE_P,
-                        AutoConstants.MIN_TRANSLATION_SPEED,
-                        AutoConstants.MAX_TRANSLATION_SPEED,
-                        AutoConstants.DECEL_DISTANCE_CM
-                );
-                fwdCmd = clamp(
-                        robotForwardError * AutoConstants.CROSS_AXIS_P,
-                        -AutoConstants.MAX_TRANSLATION_SPEED,
-                        AutoConstants.MAX_TRANSLATION_SPEED
-                );
-            }
+            double fwdCmd = scaledPower(
+                    robotForwardError,
+                    AutoConstants.DRIVE_P,
+                    AutoConstants.MIN_TRANSLATION_SPEED,
+                    AutoConstants.MAX_TRANSLATION_SPEED,
+                    AutoConstants.DECEL_DISTANCE_CM
+            );
 
-            double rotCmd = clamp(
-                    headingError * AutoConstants.HEADING_P,
-                    -AutoConstants.MAX_ROTATION_SPEED,
-                    AutoConstants.MAX_ROTATION_SPEED
+            double strCmd = scaledPower(
+                    robotStrafeError,
+                    AutoConstants.STRAFE_P,
+                    AutoConstants.MIN_TRANSLATION_SPEED,
+                    AutoConstants.MAX_TRANSLATION_SPEED,
+                    AutoConstants.DECEL_DISTANCE_CM
+            );
+
+            double rotCmd = scaledPower(
+                    headingError,
+                    AutoConstants.HEADING_P,
+                    AutoConstants.MIN_ROTATION_SPEED,
+                    AutoConstants.MAX_ROTATION_SPEED,
+                    AutoConstants.DECEL_ANGLE_DEG
             );
 
             drive.drive(
@@ -207,13 +230,25 @@ public class AutoActions {
                     AutoConstants.ROTATION_COMMAND_SIGN * rotCmd
             );
             drive.update();
-            logMoveTelemetry(pose, targetX, targetY, targetHeading, robotForwardError, robotStrafeError, headingError);
+
+            logMoveTelemetry(
+                    pose,
+                    targetX,
+                    targetY,
+                    targetHeading,
+                    robotForwardError,
+                    robotStrafeError,
+                    headingError
+            );
+
             opMode.idle();
         }
 
         brakeAndSettle();
-        expectedPose = new Pose2D(DistanceUnit.CM, targetX, targetY, AngleUnit.DEGREES, targetHeading);
+        expectedPose = readPose();
         logDrift("Move", targetX, targetY, targetHeading);
+
+        return success;
     }
 
     private Pose2D readPose() {
@@ -243,7 +278,13 @@ public class AutoActions {
                 pose.getY(DistanceUnit.CM),
                 pose.getHeading(AngleUnit.DEGREES)
         );
-        opMode.telemetry.addData("Robot Error", "F %.2f  S %.2f  H %.1f", robotForwardError, robotStrafeError, headingError);
+        opMode.telemetry.addData(
+                "Robot Error",
+                "F %.2f  S %.2f  H %.1f",
+                robotForwardError,
+                robotStrafeError,
+                headingError
+        );
         opMode.telemetry.update();
     }
 
@@ -256,9 +297,12 @@ public class AutoActions {
 
     private void logDrift(String label, double targetX, double targetY, double targetHeading) {
         Pose2D currentPose = readPose();
+
         double errorX = currentPose.getX(DistanceUnit.CM) - targetX;
         double errorY = currentPose.getY(DistanceUnit.CM) - targetY;
-        double errorHeading = normalizeAngle(currentPose.getHeading(AngleUnit.DEGREES) - targetHeading);
+        double errorHeading = normalizeAngle(
+                currentPose.getHeading(AngleUnit.DEGREES) - targetHeading
+        );
 
         opMode.telemetry.addLine(label + " drift");
         opMode.telemetry.addData("X Error", "%.2f cm", errorX);
@@ -268,17 +312,23 @@ public class AutoActions {
     }
 
     private double scaledPower(double error, double p, double minPower, double maxPower, double decelWindow) {
-        double proportional = error * p;
-        double ramp = maxPower;
-        double absError = Math.abs(error);
-        if (absError < decelWindow) {
-            ramp = minPower + (maxPower - minPower) * (absError / decelWindow);
+        if (Math.abs(error) < 1e-6) {
+            return 0.0;
         }
 
-        double limited = clamp(proportional, -ramp, ramp);
+        double proportional = error * p;
+
+        double rampLimit = maxPower;
+        if (decelWindow > 1e-6 && Math.abs(error) < decelWindow) {
+            rampLimit = minPower + (maxPower - minPower) * (Math.abs(error) / decelWindow);
+        }
+
+        double limited = clamp(proportional, -rampLimit, rampLimit);
+
         if (Math.abs(limited) < minPower) {
             return minPower * Math.signum(error);
         }
+
         return limited;
     }
 
