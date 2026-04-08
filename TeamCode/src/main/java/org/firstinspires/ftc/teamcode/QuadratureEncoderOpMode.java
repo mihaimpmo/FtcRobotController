@@ -4,10 +4,15 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DigitalChannel;
 
-@TeleOp(name = "Quadrature Encoder", group = "Test")
+import java.io.IOException;
+
+@TeleOp(name = "Quadrature Encoder CSV Event+Sample", group = "Test")
 public class QuadratureEncoderOpMode extends LinearOpMode {
 
-    private static final double COUNTS_PER_REV = 240.0; // 60 magneti * 4x
+    private static final double COUNTS_PER_REV = 240.0;
+
+    // 5 ms = bun pentru sample
+    private static final long SAMPLE_INTERVAL_NS = 5_000_000L;
 
     @Override
     public void runOpMode() throws InterruptedException {
@@ -17,9 +22,28 @@ public class QuadratureEncoderOpMode extends LinearOpMode {
         encA.setMode(DigitalChannel.Mode.INPUT);
         encB.setMode(DigitalChannel.Mode.INPUT);
 
-        QuadratureEncoderReader encoder = new QuadratureEncoderReader(encA, encB, COUNTS_PER_REV);
+        EncoderCsvLogger logger = new EncoderCsvLogger("/sdcard/FIRST/encoder_log.csv");
 
-        telemetry.addLine("Encoder initialized");
+        try {
+            logger.start();
+        } catch (IOException e) {
+            telemetry.addLine("Nu am putut porni loggerul CSV");
+            telemetry.update();
+            sleep(1500);
+            return;
+        }
+
+        QuadratureEncoderReader encoder = new QuadratureEncoderReader(
+                encA,
+                encB,
+                COUNTS_PER_REV,
+                logger,
+                SAMPLE_INTERVAL_NS
+        );
+
+        telemetry.addLine("Encoder + CSV logger ready");
+        telemetry.addLine("Log: /sdcard/FIRST/encoder_log.csv");
+        telemetry.addData("Sample interval ms", SAMPLE_INTERVAL_NS / 1_000_000.0);
         telemetry.update();
 
         waitForStart();
@@ -38,6 +62,8 @@ public class QuadratureEncoderOpMode extends LinearOpMode {
             telemetry.addData("Errors", s.errorCount);
             telemetry.addData("Last invalid", QuadratureUtil.transitionToString(s.lastInvalidFrom, s.lastInvalidTo));
             telemetry.addData("Direction", QuadratureUtil.directionToString(s.lastDirection));
+            telemetry.addData("Logger failed", encoder.hasLoggerFailed());
+            telemetry.addData("Dropped log writes", encoder.getDroppedLogWrites());
             telemetry.update();
 
             sleep(20);
