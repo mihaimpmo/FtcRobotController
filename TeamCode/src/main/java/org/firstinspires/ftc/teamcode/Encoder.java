@@ -14,7 +14,7 @@ public class Encoder extends LinearOpMode {
     private int lastState = 0;
 
     // IMPORTANT: counts per revolution
-    private static final int CPR = 120;   // modifică dacă e nevoie
+    private static final int CPR = 112;   // modifică dacă e nevoie
 
     @Override
     public void runOpMode() throws InterruptedException {
