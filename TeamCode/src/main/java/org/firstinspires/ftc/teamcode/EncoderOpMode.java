@@ -7,7 +7,7 @@ import com.qualcomm.robotcore.hardware.DigitalChannel;
 @TeleOp(name = "Custom Quadrature Encoder Threaded", group = "Test")
 public class EncoderOpMode extends LinearOpMode {
 
-    private static final int CPR = 112; // modifică dacă e nevoie
+    private static final int CPR = 112; //counts per rotation
 
     @Override
     public void runOpMode() throws InterruptedException {

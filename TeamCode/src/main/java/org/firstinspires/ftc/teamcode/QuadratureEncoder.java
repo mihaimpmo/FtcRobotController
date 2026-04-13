@@ -25,11 +25,11 @@ public class QuadratureEncoder implements Runnable {
     private volatile int lastInvalidTo = -1;
     private volatile int lastDirection = 0; // +1, -1, 0
 
-    // viteza la ultima eroare
+    //velocity at error
     private volatile double lastErrorVelocityCountsPerSec = 0.0;
     private volatile double lastErrorVelocityDegPerSec = 0.0;
 
-    // viteza minima la care a aparut o eroare
+    //min velocity at error
     private volatile double minErrorVelocityCountsPerSec = Double.POSITIVE_INFINITY;
     private volatile double minErrorVelocityDegPerSec = Double.POSITIVE_INFINITY;
 
@@ -90,6 +90,7 @@ public class QuadratureEncoder implements Runnable {
             if (currentState != lastState) {
                 int delta = EncoderUtil.transitionDelta(lastState, currentState);
 
+                //increment or decrement count based on direction
                 if (delta == 1) {
                     count++;
                     lastDirection = 1;
@@ -97,15 +98,16 @@ public class QuadratureEncoder implements Runnable {
                     count--;
                     lastDirection = -1;
                 } else {
+                    //if the state modified, but there was an invalid transition, there is an error
                     errorCount++;
                     lastInvalidFrom = lastState;
                     lastInvalidTo = currentState;
 
-                    // salveaza viteza la ultima eroare
+                    //remember last error velocity
                     lastErrorVelocityCountsPerSec = velocityCountsPerSec;
                     lastErrorVelocityDegPerSec = velocityDegPerSec;
 
-                    // viteza minima la care a aparut eroarea
+                    //remember min error velocity
                     double absCountsVel = Math.abs(velocityCountsPerSec);
                     double absDegVel = Math.abs(velocityDegPerSec);
 
@@ -123,7 +125,7 @@ public class QuadratureEncoder implements Runnable {
                 long nowNs = System.nanoTime();
                 long dtNs = nowNs - lastVelocityTimeNs;
 
-                // actualizare viteză la ~5 ms
+                //update velocity each ~5ms
                 if (dtNs >= 5_000_000L) {
                     long dCount = count - lastVelocityCount;
                     double dtSec = dtNs / 1e9;
