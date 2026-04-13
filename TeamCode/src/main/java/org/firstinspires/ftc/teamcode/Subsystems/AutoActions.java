@@ -9,17 +9,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.Constants.AutoConstants;
 
-/**
- * Closed-loop autonomous helpers using GoBilda Pinpoint for translational and heading feedback.
- *
- * Coordinate assumptions:
- * - Heading is in degrees, CCW positive.
- * - At heading 0 deg, robot forward aligns with +X and robot left aligns with +Y.
- * - drive(fwd, str, rot) expects robot-centric commands:
- *      fwd = forward, str = left, rot = CCW positive
- *
- * Public distance inputs are centimeters and heading inputs are degrees.
- */
 public class AutoActions {
     private final LinearOpMode opMode;
     private final SwerveDrive drive;
