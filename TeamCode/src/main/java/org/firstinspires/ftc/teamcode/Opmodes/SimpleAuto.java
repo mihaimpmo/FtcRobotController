@@ -33,6 +33,5 @@ public class SimpleAuto extends LinearOpMode {
             sleep(2000);
         }
 
-
     }
 }
