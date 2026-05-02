@@ -8,12 +8,11 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
-import org.firstinspires.ftc.teamcode.Subsystems.AutoActions;
 import org.firstinspires.ftc.teamcode.Subsystems.SwerveDrive;
 
 @Configurable
-@Autonomous(name = "Auto5", group = "Auto")
-public class SimpleAuto2 extends LinearOpMode {
+@Autonomous(name = "Auto10", group = "Auto")
+public class SimpleAuto3 extends LinearOpMode {
     public static double PINPOINT_X_OFFSET_MM = -84.0;
     public static double PINPOINT_Y_OFFSET_MM = -168.0;
 
@@ -36,15 +35,10 @@ public class SimpleAuto2 extends LinearOpMode {
             sleep(2000);
         }
         //CURSOR//
-        long alignStartMs = System.currentTimeMillis();
-        while (opModeIsActive() && System.currentTimeMillis() - alignStartMs < 750) {
-            swerve.hold();
-            telemetry.addLine("Aligning modules after homing...");
-            swerve.logDetailed(telemetry);
-            telemetry.update();
-        }
+
         //CURSOR//
         //or calling drive once with drive(0, 0, 0);
+        swerve.drive(0, 0, 0);
 
         sleep(250);
         double meters = 0.5;

@@ -9,7 +9,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.Subsystems.AutoActions;
 import org.firstinspires.ftc.teamcode.Subsystems.SwerveDrive;
 @Configurable
-@Autonomous(name = "LeaveAuto", group = "Auto")
+@Autonomous(name = "Auto1", group = "Auto")
 public class SimpleAuto extends LinearOpMode {
     public static double PINPOINT_X_OFFSET_MM = -84.0;
     public static double PINPOINT_Y_OFFSET_MM = -168.0;
@@ -32,6 +32,8 @@ public class SimpleAuto extends LinearOpMode {
             telemetry.update();
             sleep(2000);
         }
+        actions.turnToHeadingDegrees(0);
+        actions.forwardMeters(0.3);
 
     }
 }
