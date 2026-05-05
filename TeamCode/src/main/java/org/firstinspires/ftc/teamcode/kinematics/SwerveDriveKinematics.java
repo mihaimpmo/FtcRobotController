@@ -3,8 +3,8 @@ package org.firstinspires.ftc.teamcode.kinematics;
 /**
  * Four-module swerve inverse kinematics (+x forward, +y left, +omega CCW).
  */
-public final class SwerveDriveKinematics {
-    private final Translation2d[] moduleTranslations;
+public class SwerveDriveKinematics {
+    private Translation2d[] moduleTranslations;
 
     public SwerveDriveKinematics(Translation2d fl, Translation2d fr, Translation2d bl, Translation2d br) {
         moduleTranslations = new Translation2d[]{fl, fr, bl, br};

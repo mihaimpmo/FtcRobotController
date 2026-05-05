@@ -1,9 +1,4 @@
 package org.firstinspires.ftc.teamcode.Subsystems;
-
-import com.arcrobotics.ftclib.geometry.Translation2d;
-import com.arcrobotics.ftclib.kinematics.wpilibkinematics.ChassisSpeeds;
-import com.arcrobotics.ftclib.kinematics.wpilibkinematics.SwerveDriveKinematics;
-import com.arcrobotics.ftclib.kinematics.wpilibkinematics.SwerveModuleState;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -14,6 +9,10 @@ import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.teamcode.Constants.DriveConstants;
 import org.firstinspires.ftc.teamcode.Constants.SteeringConstants;
 import org.firstinspires.ftc.teamcode.Hardware.RevThroughBoreEncoder;
+import org.firstinspires.ftc.teamcode.kinematics.SwerveDriveKinematics;
+import org.firstinspires.ftc.teamcode.kinematics.Translation2d;
+import org.firstinspires.ftc.teamcode.kinematics.ChassisSpeeds;
+import org.firstinspires.ftc.teamcode.kinematics.SwerveModuleState;
 
 public class SwerveDrive {
     public final SwerveModule fl, fr, bl, br;

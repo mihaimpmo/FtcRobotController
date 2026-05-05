@@ -9,7 +9,7 @@ import com.qualcomm.robotcore.hardware.DigitalChannel;
 
 import org.firstinspires.ftc.teamcode.Constants.SteeringConstants;
 import org.firstinspires.ftc.teamcode.Hardware.RevThroughBoreEncoder;
-@Disabled
+//@Disabled
 @TeleOp(name = "Swerve Calibration", group = "Calibration")
 public class SwerveCalibration extends LinearOpMode {
 

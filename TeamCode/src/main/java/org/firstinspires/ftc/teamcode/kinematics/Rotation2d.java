@@ -5,8 +5,8 @@ import org.firstinspires.ftc.teamcode.Utils.MathUtils;
 /**
  * Robot heading / wheel angle in radians (same conventions as WPILib FTCLib bindings).
  */
-public final class Rotation2d {
-    private final double radians;
+public class Rotation2d {
+    private double radians;
 
     public Rotation2d(double radians) {
         this.radians = radians;

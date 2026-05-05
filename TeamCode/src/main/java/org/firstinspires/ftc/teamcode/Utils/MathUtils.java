@@ -33,5 +33,14 @@ public class MathUtils {
         if (wrapped < -180.0) wrapped += 360.0;
         return wrapped;
     }
+    public static double normalizeAngle(double angle) {
+        while (angle > Math.PI) {
+            angle -= 2 * Math.PI;
+        }
+        while (angle < -Math.PI) {
+            angle += 2 * Math.PI;
+        }
+        return angle;
+    }
 
 }

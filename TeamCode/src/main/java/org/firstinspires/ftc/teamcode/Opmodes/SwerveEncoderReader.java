@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.teamcode.Constants.SteeringConstants;
 import org.firstinspires.ftc.teamcode.Hardware.RevThroughBoreEncoder;
-@Disabled
+//@Disabled
 @TeleOp(name = "Swerve Encoder Reader", group = "Test")
 public class SwerveEncoderReader extends LinearOpMode {
 

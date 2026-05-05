@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.DigitalChannel;
 import org.firstinspires.ftc.teamcode.Constants.SteeringConstants;
 import org.firstinspires.ftc.teamcode.Hardware.RevThroughBoreEncoder;
 import org.firstinspires.ftc.teamcode.Subsystems.SwerveModule;
-@Disabled
+//@Disabled
 @TeleOp(name = "Swerve Module Test", group = "Test")
 public class SwerveModuleTest extends LinearOpMode {
     private SwerveModule fl, fr, bl, br;

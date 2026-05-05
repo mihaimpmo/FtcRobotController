@@ -3,7 +3,7 @@ package org.firstinspires.ftc.teamcode.kinematics;
 /**
  * Wheel command: speed (m/s) and azimuth. Matches WPILib {@code SwerveModuleState} behavior.
  */
-public final class SwerveModuleState {
+public class SwerveModuleState {
     public double speedMetersPerSecond;
     public Rotation2d angle;
 
